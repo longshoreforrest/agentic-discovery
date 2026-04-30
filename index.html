@@ -1,0 +1,2961 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>IdeaAgent</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+:root {
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
+  --primary-light: #e0e7ff;
+  --accent: #06b6d4;
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --text: #1e293b;
+  --text-light: #64748b;
+  --border: #e2e8f0;
+  --danger: #ef4444;
+  --danger-bg: #fef2f2;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --radius: 14px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Login Overlay ── */
+#loginOverlay {
+  position: fixed; inset: 0; z-index: 99999;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-family: inherit;
+}
+.login-box {
+  background: white; border-radius: 24px; padding: 40px 32px;
+  width: 90%; max-width: 380px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  text-align: center;
+}
+.login-box h1 { font-size: 28px; font-weight: 700; color: var(--primary-dark); margin-bottom: 4px; }
+.login-box .subtitle { font-size: 14px; color: var(--text-light); margin-bottom: 28px; }
+.login-box input {
+  width: 100%; padding: 14px 16px; border: 2px solid var(--border);
+  border-radius: 12px; font-size: 16px; font-family: inherit;
+  transition: border-color 0.2s; outline: none;
+}
+.login-box input:focus { border-color: var(--primary); }
+.login-box button {
+  width: 100%; padding: 14px; margin-top: 16px;
+  background: var(--primary); color: white; border: none;
+  border-radius: 12px; font-size: 16px; font-weight: 600;
+  cursor: pointer; transition: background 0.2s; font-family: inherit;
+}
+.login-box button:hover { background: var(--primary-dark); }
+.login-box button:disabled { opacity: 0.6; cursor: not-allowed; }
+.login-error { color: var(--danger); font-size: 13px; margin-top: 12px; display: none; }
+
+/* ── Header ── */
+.header {
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  padding: 14px 20px; display: flex; align-items: center;
+  gap: 12px; position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 12px rgba(99,102,241,0.3);
+}
+.header h1 { color: white; font-size: 18px; font-weight: 700; letter-spacing: -0.3px; flex: 1; }
+.header-category {
+  color: rgba(255,255,255,0.85); font-size: 12px; font-weight: 500;
+  background: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 20px;
+}
+.user-badge {
+  color: white; font-size: 12px; font-weight: 600;
+  background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 20px;
+}
+.presence-btn {
+  cursor: pointer; font-size: 12px; color: white;
+  background: rgba(255,255,255,0.15); padding: 4px 12px;
+  border-radius: 16px; transition: background 0.15s; user-select: none;
+  border: none; font-family: inherit;
+}
+.presence-btn:hover { background: rgba(255,255,255,0.25); }
+.logout-btn {
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.8); padding: 4px 12px; border-radius: 16px;
+  font-size: 12px; cursor: pointer; transition: all 0.15s; font-family: inherit;
+}
+.logout-btn:hover { background: rgba(255,255,255,0.25); color: white; }
+.lang-btn:hover { background: rgba(255,255,255,0.2) !important; color: white !important; }
+.lang-btn.active { background: rgba(255,255,255,0.25) !important; color: white !important; border-color: rgba(255,255,255,0.4) !important; }
+
+/* ── Presence Popup ── */
+.presence-popup {
+  display: none; position: fixed; top: 56px; right: 16px;
+  background: white; border-radius: 16px;
+  box-shadow: var(--shadow-lg); z-index: 1000;
+  min-width: 260px; max-width: 340px; overflow: hidden;
+}
+.presence-popup-header {
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+  font-size: 13px; font-weight: 600; color: var(--text);
+}
+.presence-list { padding: 8px 12px; max-height: 300px; overflow-y: auto; }
+
+/* ── Layout ── */
+.app { max-width: 1200px; margin: 0 auto; padding: 20px 16px; }
+
+/* ── Filters ── */
+.filter-bar {
+  display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap;
+  align-items: center; position: sticky; top: 56px; z-index: 50;
+  background: var(--bg); padding: 10px 0;
+}
+.filter-chip {
+  padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 500;
+  cursor: pointer; border: 1.5px solid var(--border); background: white;
+  color: var(--text-light); transition: all 0.2s; font-family: inherit;
+}
+.filter-chip:hover { border-color: var(--primary); color: var(--primary); }
+.filter-chip.active {
+  background: var(--primary); color: white; border-color: var(--primary);
+}
+.filter-chip .chip-count {
+  display: inline-block; background: rgba(255,255,255,0.3);
+  border-radius: 10px; padding: 0 6px; font-size: 11px; margin-left: 4px;
+}
+.filter-chip.active .chip-count { background: rgba(255,255,255,0.3); }
+.filter-chip:not(.active) .chip-count { background: var(--border); color: var(--text-light); }
+
+/* ── Kanban ── */
+.kanban {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;
+}
+.kanban-col {
+  background: #f1f5f9; border-radius: 14px; padding: 14px 12px; min-height: 120px;
+}
+.kanban-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+  padding-bottom: 10px; border-bottom: 2px solid var(--border);
+}
+.kanban-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+.kanban-title { font-size: 13px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.3px; }
+.kanban-count {
+  font-size: 11px; font-weight: 600; background: white; border-radius: 10px;
+  padding: 1px 8px; color: var(--text-light); margin-left: auto;
+}
+.kanban-card {
+  background: white; border-radius: 10px; padding: 12px; margin-bottom: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05); cursor: pointer;
+  border: 1px solid transparent; transition: all 0.15s;
+}
+.kanban-card:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(99,102,241,0.12); }
+.kanban-card-author { font-size: 11px; color: var(--text-light); margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+.kanban-card-text { font-size: 13px; color: var(--text); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.kanban-card-footer { font-size: 10px; color: #94a3b8; margin-top: 6px; display: flex; gap: 8px; align-items: center; }
+.kanban-empty { text-align: center; padding: 20px 10px; color: #94a3b8; font-size: 12px; }
+
+@media (max-width: 768px) {
+  .kanban { grid-template-columns: 1fr; }
+}
+
+/* ── Cards ── */
+.card {
+  background: var(--surface); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px;
+  border: 1px solid var(--border); transition: box-shadow 0.2s;
+}
+.card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+/* ── New Idea Form ── */
+.idea-form { margin-bottom: 24px; }
+.idea-textarea {
+  width: 100%; min-height: 120px; padding: 16px; border: 2px solid var(--border);
+  border-radius: 12px; font-size: 15px; font-family: inherit; resize: vertical;
+  outline: none; transition: border-color 0.2s; line-height: 1.5;
+}
+.idea-textarea:focus { border-color: var(--primary); }
+.idea-textarea::placeholder { color: #94a3b8; }
+
+.form-actions {
+  display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; align-items: center;
+}
+.btn {
+  padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 600;
+  cursor: pointer; border: none; font-family: inherit; transition: all 0.2s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-mic {
+  background: var(--surface); color: var(--text); border: 2px solid var(--border);
+  width: 44px; height: 44px; padding: 0; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+}
+.btn-mic:hover { border-color: var(--primary); color: var(--primary); }
+.btn-mic.recording { background: var(--danger); color: white; border-color: var(--danger); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); } 50% { box-shadow: 0 0 0 12px rgba(239,68,68,0); } }
+
+.speech-lang-select {
+  padding: 6px 10px; border-radius: 8px; border: 1.5px solid var(--border);
+  font-size: 12px; font-family: inherit; color: var(--text-light);
+  background: var(--surface); cursor: pointer;
+}
+
+.speech-preview {
+  display: none; margin-top: 12px; padding: 14px; border-radius: 12px;
+  background: #fefce8; border: 1.5px solid #fde047; font-size: 14px; line-height: 1.5;
+}
+.speech-preview-actions { display: flex; gap: 8px; margin-top: 10px; }
+.btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 8px; }
+
+/* ── Idea Cards ── */
+.idea-card { position: relative; }
+.idea-meta {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  margin-bottom: 10px; font-size: 12px; color: var(--text-light);
+}
+.idea-author {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-weight: 600; color: var(--text);
+}
+.idea-avatar {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: white; flex-shrink: 0;
+}
+.idea-time { color: var(--text-light); }
+.idea-id {
+  font-family: monospace; font-size: 13px; color: #64748b;
+  background: #f1f5f9; padding: 2px 8px; border-radius: 6px;
+  letter-spacing: 0.3px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.idea-id-copy {
+  cursor: pointer; opacity: 0.5; transition: opacity 0.15s;
+  font-size: 13px; line-height: 1;
+}
+.idea-id-copy:hover { opacity: 1; }
+.idea-body { font-size: 15px; line-height: 1.6; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+.idea-status {
+  display: inline-block; padding: 2px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
+}
+.status-new { background: #dbeafe; color: #2563eb; }
+.status-in-progress { background: #fef3c7; color: #d97706; }
+.status-done { background: #dcfce7; color: #16a34a; }
+.status-blocked { background: #fef2f2; color: #dc2626; }
+
+/* ── Blocked Banner ── */
+.blocked-banner {
+  display: none; background: var(--danger-bg); border: 1.5px solid #fca5a5;
+  border-radius: 12px; padding: 14px 18px; margin-bottom: 16px;
+  font-size: 13px; color: #991b1b;
+}
+
+/* ── Implementation log ── */
+.impl-log {
+  margin-top: 12px; padding: 12px; background: linear-gradient(135deg, #ede9fe 0%, #e0e7ff 100%);
+  border-radius: 12px; font-size: 13px; color: var(--text);
+  border: 1px solid #c7d2fe;
+}
+.impl-log-entry {
+  padding: 5px 0; border-bottom: 1px solid rgba(99,102,241,0.15);
+  display: flex; align-items: flex-start; gap: 8px;
+}
+.impl-log-entry:last-child { border-bottom: none; }
+.agent-avatar {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(99,102,241,0.3);
+  animation: agentPulse 2s ease-in-out infinite;
+}
+@keyframes agentPulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(99,102,241,0.3); }
+  50% { box-shadow: 0 2px 16px rgba(99,102,241,0.6); }
+}
+
+/* ── Message thread ── */
+.msg-thread { margin-top: 10px; max-height: 400px; overflow-y: auto; padding-right: 4px; }
+.msg-bubble {
+  padding: 6px 10px; border-radius: 10px; margin-bottom: 4px;
+  font-size: 13px; line-height: 1.4; white-space: pre-wrap; word-break: break-word;
+}
+.msg-user { background: var(--primary-light); color: var(--text); }
+.msg-agent { background: #f1f5f9; color: var(--text-light); }
+.msg-meta { font-size: 10px; color: var(--text-light); margin-bottom: 2px; display: flex; align-items: center; justify-content: space-between; }
+.msg-delete-btn {
+  background: none; border: none; cursor: pointer; font-size: 12px; color: var(--text-light);
+  padding: 0 2px; opacity: 0.4; transition: opacity 0.15s, color 0.15s;
+}
+.msg-delete-btn:hover { opacity: 1; color: var(--danger); }
+.msg-delete-btn.marked { opacity: 1; color: var(--danger); }
+.msg-bubble.marked-delete {
+  opacity: 0.45; text-decoration: line-through; border: 1.5px dashed #fca5a5;
+  background: #fef2f2 !important; position: relative;
+}
+.delete-action-bar {
+  display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+  background: linear-gradient(135deg, #fef2f2, #fff1f2); border: 1.5px solid #fca5a5;
+  border-radius: 10px; margin-top: 10px; animation: fadeSlide 0.2s ease;
+}
+.delete-action-bar .delete-bar-info {
+  flex: 1; font-size: 13px; font-weight: 600; color: #991b1b;
+}
+.delete-bar-btn {
+  padding: 6px 16px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  cursor: pointer; border: none; font-family: inherit; transition: all 0.15s;
+}
+.delete-bar-save { background: var(--danger); color: white; }
+.delete-bar-save:hover { background: #dc2626; }
+.delete-bar-cancel { background: white; color: var(--text); border: 1px solid var(--border); }
+.delete-bar-cancel:hover { background: #f1f5f9; }
+.copy-user-msgs-btn {
+  display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px;
+  background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px;
+  font-size: 12px; font-weight: 500; color: #166534; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s; font-family: inherit;
+}
+.copy-user-msgs-btn:hover { background: #dcfce7; border-color: #4ade80; }
+.cc-copy-btn {
+  background: #ede9fe; border: 1px solid #c4b5fd; cursor: pointer; font-size: 13px;
+  padding: 2px 5px; opacity: 0.7; transition: all 0.15s;
+  border-radius: 6px; line-height: 1;
+}
+.cc-copy-btn:hover { opacity: 1; background: #ddd6fe; border-color: #a78bfa; }
+.cc-copy-menu {
+  position: fixed; background: white; border-radius: 12px;
+  border: 1px solid var(--border); box-shadow: var(--shadow-lg);
+  z-index: 10000; min-width: 300px; overflow: hidden;
+  animation: fadeSlide 0.2s ease;
+}
+.cc-copy-menu-header {
+  padding: 10px 14px; font-size: 12px; font-weight: 700;
+  color: var(--primary-dark); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 6px;
+  background: var(--primary-light);
+}
+.cc-copy-menu-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  font-size: 13px; cursor: pointer; border: none; background: none;
+  width: 100%; text-align: left; font-family: inherit; color: var(--text);
+  transition: background 0.15s; line-height: 1.4;
+}
+.cc-copy-menu-item:hover { background: #f1f5f9; }
+.cc-copy-menu-item:not(:last-child) { border-bottom: 1px solid #f1f5f9; }
+.cc-copy-menu-item .cc-item-icon { font-size: 18px; flex-shrink: 0; }
+.cc-copy-menu-item .cc-item-desc { font-size: 11px; color: var(--text-light); margin-top: 1px; }
+.add-thought-row {
+  display: flex; gap: 8px; margin-top: 10px; align-items: flex-end;
+}
+.add-thought-input {
+  flex: 1; padding: 10px 14px; border: 2px solid var(--border);
+  border-radius: 10px; font-size: 14px; font-family: inherit;
+  outline: none; transition: border-color 0.2s; resize: none; min-height: 40px;
+}
+.add-thought-input:focus { border-color: var(--primary); }
+.add-thought-btn {
+  padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; font-family: inherit;
+  background: var(--primary); color: white; white-space: nowrap;
+  transition: background 0.2s; flex-shrink: 0;
+}
+.add-thought-btn:hover { background: var(--primary-dark); }
+.add-thought-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Slide-in panel ── */
+.slide-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+  z-index: 900; opacity: 0; pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.slide-overlay.open { opacity: 1; pointer-events: auto; }
+.slide-panel {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: min(760px, 94vw); background: var(--surface);
+  z-index: 901; transform: translateX(100%);
+  transition: transform 0.3s ease;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+  overflow-y: auto; padding: 20px 24px;
+}
+.slide-panel.open { transform: translateX(0); }
+.slide-panel .card { padding: 16px; margin-bottom: 0; box-shadow: none; border: none; }
+.slide-panel .idea-meta { margin-bottom: 8px; font-size: 12px; gap: 8px; }
+.slide-panel .idea-avatar { width: 22px; height: 22px; font-size: 10px; }
+.slide-panel .msg-thread { max-height: 60vh; }
+.slide-panel .msg-bubble { padding: 8px 12px; margin-bottom: 6px; font-size: 14px; line-height: 1.5; }
+.slide-panel .msg-meta { font-size: 11px; margin-bottom: 2px; }
+.slide-panel .impl-log { padding: 12px; margin-top: 12px; font-size: 13px; }
+.slide-panel .impl-log-entry { padding: 6px 0; gap: 8px; }
+.slide-panel .agent-avatar { width: 22px; height: 22px; font-size: 12px; }
+.slide-panel .add-thought-row { margin-top: 12px; }
+.slide-panel .add-thought-input { padding: 10px 14px; font-size: 14px; min-height: 40px; }
+
+/* ── Agent stamp divider ── */
+.agent-stamp {
+  display: flex; align-items: center; gap: 10px;
+  margin: 12px 0; padding: 0;
+}
+.agent-stamp-line {
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, #8b5cf6, transparent);
+}
+.agent-stamp-label {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  white-space: nowrap;
+}
+.agent-stamp-done {
+  background: #dcfce7; color: #16a34a; border: 1px solid #86efac;
+}
+.agent-stamp-wip {
+  background: #fef3c7; color: #d97706; border: 1px solid #fcd34d;
+}
+
+/* ── Status filter row ── */
+.status-filter-bar {
+  display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;
+}
+.status-chip {
+  padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500;
+  cursor: pointer; border: 1.5px solid var(--border); background: white;
+  color: var(--text-light); transition: all 0.2s; font-family: inherit;
+}
+.status-chip:hover { border-color: var(--primary); color: var(--primary); }
+.status-chip.active {
+  background: var(--primary); color: white; border-color: var(--primary);
+}
+.status-chip .chip-count {
+  display: inline-block; border-radius: 10px; padding: 0 6px;
+  font-size: 10px; margin-left: 4px;
+}
+.status-chip.active .chip-count { background: rgba(255,255,255,0.3); }
+.status-chip:not(.active) .chip-count { background: var(--border); color: var(--text-light); }
+
+/* ── Orchestrator ── */
+.orchestrator-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  background: linear-gradient(135deg, #fdf4ff, #fae8ff);
+  border: 1px solid #e879f9; color: #a21caf;
+}
+.orchestrator-assign-btn {
+  padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  cursor: pointer; border: 1.5px solid #e879f9; background: #fdf4ff;
+  color: #a21caf; font-family: inherit; transition: all 0.2s;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.orchestrator-assign-btn:hover { background: #f5d0fe; border-color: #d946ef; }
+.orchestrator-unassign-btn {
+  padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  cursor: pointer; border: 1.5px solid var(--border); background: #f8fafc;
+  color: var(--text-light); font-family: inherit; transition: all 0.2s;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.orchestrator-unassign-btn:hover { background: #f1f5f9; }
+
+/* ── Empty state ── */
+/* ── Main tabs ── */
+.main-tabs {
+  display: flex; gap: 4px; padding: 0 16px; margin-bottom: 16px;
+  border-bottom: 2px solid var(--border);
+}
+.main-tab {
+  padding: 10px 18px; border: none; background: none; cursor: pointer;
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  color: var(--text-light); border-bottom: 2px solid transparent;
+  margin-bottom: -2px; transition: all 0.2s;
+}
+.main-tab:hover { color: var(--primary); }
+.main-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+/* ── Docs section ── */
+.docs-section { padding: 0 16px 24px; }
+
+/* ── Mermaid flowchart ── */
+.mermaid-wrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 24px 16px; margin-bottom: 16px;
+  overflow-x: auto;
+}
+.mermaid-wrap .mermaid { display: flex; justify-content: center; }
+.mermaid-wrap .mermaid svg { max-width: 100%; height: auto; }
+.mermaid .node { cursor: pointer; }
+.mermaid .node:hover rect, .mermaid .node:hover polygon { filter: brightness(0.95); }
+.flow-info-panel {
+  position: relative; padding: 16px 20px; border-radius: 12px;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border: 1px solid var(--border); margin-top: 12px;
+  animation: fadeSlide 0.25s ease;
+}
+@keyframes fadeSlide { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.flow-info-close {
+  position: absolute; top: 10px; right: 12px; background: none;
+  border: none; cursor: pointer; font-size: 16px; color: var(--text-light);
+  padding: 2px 6px; border-radius: 6px;
+}
+.flow-info-close:hover { background: var(--border); }
+
+.empty-state {
+  text-align: center; padding: 60px 20px; color: var(--text-light);
+}
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+.empty-state p { font-size: 15px; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: #1e293b; color: white; padding: 12px 24px; border-radius: 12px;
+  font-size: 14px; font-weight: 500; z-index: 10000;
+  box-shadow: var(--shadow-lg); opacity: 0; transition: opacity 0.3s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; }
+
+/* ── Help tab ── */
+.help-hero {
+  text-align: center; padding: 24px 16px 16px; margin-bottom: 20px;
+}
+.help-hero h2 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+.help-hero .role-label {
+  display: inline-block; padding: 4px 16px; border-radius: 20px;
+  font-size: 14px; font-weight: 600; margin-top: 8px;
+}
+.help-comic {
+  background: var(--surface); border: 2px solid var(--border);
+  border-radius: 16px; padding: 20px; margin-bottom: 16px;
+  position: relative;
+}
+.help-comic-title {
+  font-size: 16px; font-weight: 700; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.comic-panel {
+  display: flex; align-items: flex-start; gap: 14px; padding: 14px;
+  background: #f8fafc; border-radius: 12px; margin-bottom: 10px;
+  border: 1px solid var(--border);
+}
+.comic-panel:last-child { margin-bottom: 0; }
+.comic-avatar {
+  width: 48px; height: 48px; border-radius: 50%; font-size: 28px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.comic-bubble {
+  flex: 1; background: white; border-radius: 12px; padding: 12px 14px;
+  position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  border: 1px solid var(--border); font-size: 14px; line-height: 1.5;
+}
+.comic-bubble::before {
+  content: ''; position: absolute; left: -8px; top: 14px;
+  width: 0; height: 0; border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent; border-right: 8px solid white;
+}
+.comic-bubble strong { color: var(--primary-dark); }
+.comic-bubble .action-tag {
+  display: inline-block; padding: 2px 8px; border-radius: 6px;
+  font-size: 11px; font-weight: 600; margin: 2px 2px;
+}
+.help-powers {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px; margin-top: 12px;
+}
+.power-card {
+  background: white; border: 1.5px solid var(--border); border-radius: 12px;
+  padding: 16px; text-align: center; transition: all 0.2s;
+}
+.power-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(99,102,241,0.1); }
+.power-icon { font-size: 32px; margin-bottom: 8px; }
+.power-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.power-desc { font-size: 12px; color: var(--text-light); line-height: 1.4; }
+.role-toggle-bar {
+  display: flex; justify-content: center; gap: 8px; margin-bottom: 20px;
+}
+.role-toggle-btn {
+  padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: 1.5px solid var(--border); background: white;
+  color: var(--text-light); transition: all 0.2s; font-family: inherit;
+}
+.role-toggle-btn:hover { border-color: var(--primary); color: var(--primary); }
+.role-toggle-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+/* ── Login role toast ── */
+.role-welcome {
+  position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+  background: white; border-radius: 16px; padding: 20px 28px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.18); z-index: 10001;
+  text-align: center; animation: roleSlideIn 0.4s ease;
+  border: 2px solid var(--primary-light); max-width: 380px; width: 90%;
+}
+@keyframes roleSlideIn { from { opacity: 0; transform: translateX(-50%) translateY(-20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .header { padding: 12px 14px; }
+  .header h1 { font-size: 16px; }
+  .app { padding: 14px 10px; }
+  .card { padding: 16px; }
+  .idea-textarea { min-height: 100px; font-size: 16px; }
+  .login-box { padding: 32px 24px; }
+  .header-category { display: none; }
+  .filter-bar { top: 50px; }
+  .filter-chip { padding: 6px 12px; font-size: 12px; }
+  .kanban { grid-template-columns: 1fr; }
+  .main-tabs { padding: 0 10px; }
+  .main-tab { padding: 8px 14px; font-size: 13px; }
+  .process-step { padding: 12px 12px 12px 52px; }
+  .step-icon { width: 30px; height: 30px; font-size: 15px; left: 8px; }
+  .mermaid-wrap { padding: 16px 8px; }
+  .flow-info-panel { padding: 12px 14px; }
+  .slide-panel { width: 100vw; padding: 14px 12px; }
+  .slide-panel .card { padding: 12px; }
+  .slide-panel .msg-thread { max-height: 50vh; }
+  .slide-panel .msg-bubble { padding: 6px 10px; font-size: 13px; }
+  .status-filter-bar { gap: 4px; }
+  .status-chip { padding: 5px 10px; font-size: 11px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Login Overlay ── -->
+<div id="loginOverlay">
+  <div class="login-box">
+    <h1>Agentic Idea Discovery</h1>
+    <p class="subtitle" id="loginSubtitle">Kerro ideasi — me toteutamme sen</p>
+    <form id="loginForm">
+      <input type="text" id="loginName" placeholder="Nimesi tai nimimerkki" autocomplete="name" required>
+      <button type="submit" id="loginBtn">Aloita</button>
+      <div class="login-error" id="loginError">Anna nimi tai nimimerkki.</div>
+    </form>
+  </div>
+</div>
+
+<!-- ── App ── -->
+<div id="appRoot" style="display:none">
+  <!-- Header -->
+  <div class="header">
+    <h1>Agentic Idea Discovery</h1>
+    <span class="header-category" id="headerCategory"></span>
+    <span id="headerRoleBadge" style="display:none;font-size:12px;font-weight:600;padding:4px 14px;border-radius:20px;cursor:pointer" onclick="openHelpForRole()"></span>
+    <span class="user-badge" id="userBadge" style="display:none"></span>
+    <span id="langToggle" style="display:none;gap:2px;align-items:center">
+      <button class="lang-btn active" data-lang="fi" onclick="setLang('fi')" style="padding:3px 8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.2);color:white;font-family:inherit;transition:all 0.15s">🇫🇮 FI</button>
+      <button class="lang-btn" data-lang="en" onclick="setLang('en')" style="padding:3px 8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);font-family:inherit;transition:all 0.15s">🇬🇧 EN</button>
+    </span>
+    <button class="presence-btn" id="presenceBtn" style="display:none" onclick="togglePresence()">
+      <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4ade80;margin-right:5px;vertical-align:middle;box-shadow:0 0 6px rgba(74,222,128,0.6)"></span>
+      <span id="presenceCount">0</span>
+    </button>
+    <button class="presence-btn" id="agentPresenceBtn" style="display:none" title="Aktiiviset agentit" onclick="toggleAgentPresence()">
+      <span style="font-size:14px;margin-right:3px">🤖</span>
+      <span id="agentCount">0</span>
+    </button>
+    <button class="logout-btn" id="logoutBtn" style="display:none" onclick="logout()">Ulos</button>
+  </div>
+
+  <!-- Presence popup (users) -->
+  <div class="presence-popup" id="presencePopup">
+    <div class="presence-popup-header" id="presencePopupHeader">Kirjautuneet käyttäjät</div>
+    <div class="presence-list" id="presenceList"></div>
+  </div>
+
+  <!-- Presence popup (agents) -->
+  <div class="presence-popup" id="agentPresencePopup">
+    <div class="presence-popup-header" id="agentPresencePopupHeader">🤖 Kirjautuneet agentit</div>
+    <div class="presence-list" id="agentPresenceList"></div>
+  </div>
+
+  <!-- Main content -->
+  <div class="app" id="appContent">
+    <!-- Blocked banner -->
+    <div class="blocked-banner" id="blockedBanner">
+      Tilisi on estetty haitallisen toiminnan vuoksi. Et voi luoda uusia ideoita.
+    </div>
+
+    <!-- Main tabs -->
+    <div class="main-tabs" id="mainTabs">
+      <button class="main-tab active" data-tab="kanban" onclick="switchTab('kanban')">📋 Kanban</button>
+      <button class="main-tab" data-tab="help" onclick="switchTab('help')">🦸 Käyttöopas</button>
+      <button class="main-tab" data-tab="docs" onclick="switchTab('docs')">📖 Dokumentaatio</button>
+    </div>
+
+    <!-- Tab: Kanban -->
+    <div id="tabKanban">
+
+    <!-- New idea form -->
+    <div class="card idea-form">
+      <textarea class="idea-textarea" id="ideaText" placeholder="Kuvaile ideasi tähän... Voit kirjoittaa millä tahansa kielellä tai käyttää mikrofonia puhuaksesi suomeksi tai englanniksi."></textarea>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="submitBtn" onclick="submitIdea()">Lähetä idea</button>
+        <button class="btn btn-mic" id="micBtn" onclick="toggleSpeech()" title="Puhu ideasi">
+          <span id="micIcon">&#x1F3A4;</span>
+        </button>
+        <select class="speech-lang-select" id="speechLang">
+          <option value="fi-FI">Suomi</option>
+          <option value="en-US">English</option>
+        </select>
+      </div>
+      <div class="speech-preview" id="speechPreview">
+        <div id="speechText"></div>
+        <div class="speech-preview-actions">
+          <button class="btn btn-primary btn-sm" onclick="acceptSpeech()">Hyväksy</button>
+          <button class="btn btn-sm" style="background:#f1f5f9;color:var(--text)" onclick="cancelSpeech()">Hylkää</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar" id="filterBar">
+      <button class="filter-chip active" data-filter="all" onclick="setFilter('all')">Kaikki ideat <span class="chip-count" id="countAll">0</span></button>
+      <button class="filter-chip" data-filter="mine" onclick="setFilter('mine')">Omat ideasi <span class="chip-count" id="countMine">0</span></button>
+      <button class="filter-chip" data-filter="participated" onclick="setFilter('participated')">Osallistunut <span class="chip-count" id="countParticipated">0</span></button>
+      <input type="text" id="searchInput" placeholder="Hae..." oninput="renderAll()"
+        style="margin-left:auto;padding:8px 14px;border:1.5px solid var(--border);border-radius:20px;font-size:13px;font-family:inherit;outline:none;width:180px;transition:border-color 0.2s"
+        onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+    </div>
+
+    <!-- Status filters -->
+    <div class="status-filter-bar" id="statusFilterBar">
+      <button class="status-chip active" data-status="all" onclick="setStatusFilter('all')">Kaikki <span class="chip-count" id="statusCountAll">0</span></button>
+      <button class="status-chip" data-status="new" onclick="setStatusFilter('new')">Tuoreet ideat <span class="chip-count" id="statusCountNew">0</span></button>
+      <button class="status-chip" data-status="in-progress" onclick="setStatusFilter('in-progress')">Työn alla <span class="chip-count" id="statusCountProgress">0</span></button>
+      <button class="status-chip" data-status="done" onclick="setStatusFilter('done')">Toiveet toteutettu <span class="chip-count" id="statusCountDone">0</span></button>
+      <button class="status-chip" data-status="blocked" onclick="setStatusFilter('blocked')">Estetyt <span class="chip-count" id="statusCountBlocked">0</span></button>
+    </div>
+
+    <!-- Orchestrator filters -->
+    <div class="status-filter-bar" style="margin-bottom:12px">
+      <span id="orchFilterLabel" style="font-size:12px;color:var(--text-light);font-weight:600;margin-right:4px">🧙‍♂️ Orchestrator:</span>
+      <button class="filter-chip" data-filter="orchestrator-tapio" onclick="setFilter('orchestrator-tapio')">👤 Tapio <span class="chip-count" id="countTapio">0</span></button>
+      <button class="filter-chip" data-filter="orchestrator-tommi" onclick="setFilter('orchestrator-tommi')">👤 Tommi <span class="chip-count" id="countTommi">0</span></button>
+    </div>
+
+    <!-- Kanban board -->
+    <div class="kanban" id="kanbanBoard">
+      <div class="kanban-col" id="colNew">
+        <div class="kanban-header">
+          <span class="kanban-dot" style="background:#3b82f6"></span>
+          <span class="kanban-title" id="kanbanTitleNew">Tuoreet ideat</span>
+          <span class="kanban-count" id="kanbanCountNew">0</span>
+        </div>
+        <div id="kanbanNew"></div>
+      </div>
+      <div class="kanban-col" id="colPending">
+        <div class="kanban-header">
+          <span class="kanban-dot" style="background:#f97316"></span>
+          <span class="kanban-title" id="kanbanTitlePending">🤖💬 Lisäideoita!</span>
+          <span class="kanban-count" id="kanbanCountPending">0</span>
+        </div>
+        <div id="kanbanPending"></div>
+      </div>
+      <div class="kanban-col" id="colProgress">
+        <div class="kanban-header">
+          <span class="kanban-dot" style="background:#f59e0b"></span>
+          <span class="kanban-title" id="kanbanTitleProgress">🤖 Agentti hommissa</span>
+          <span class="kanban-count" id="kanbanCountProgress">0</span>
+        </div>
+        <div id="kanbanProgress"></div>
+      </div>
+      <div class="kanban-col" id="colDone">
+        <div class="kanban-header">
+          <span class="kanban-dot" style="background:#22c55e"></span>
+          <span class="kanban-title" id="kanbanTitleDone">Toiveet toteutettu</span>
+          <span class="kanban-count" id="kanbanCountDone">0</span>
+        </div>
+        <div id="kanbanDone"></div>
+      </div>
+    </div>
+
+    </div><!-- /tabKanban -->
+
+    <!-- Tab: Help -->
+    <div id="tabHelp" style="display:none">
+      <div class="docs-section" id="helpContent"></div>
+    </div><!-- /tabHelp -->
+
+    <!-- Tab: Dokumentaatio -->
+    <div id="tabDocs" style="display:none">
+      <div class="docs-section">
+        <h2 id="docsTitle" style="font-size:20px;font-weight:700;margin-bottom:4px;color:var(--text)">Työnkulku</h2>
+        <p id="docsSubtitle" style="font-size:13px;color:var(--text-light);margin-bottom:16px">Klikkaa kaavion vaihetta nähdäksesi lisätietoja</p>
+
+        <div class="mermaid-wrap">
+          <div id="mermaidChart"></div>
+        </div>
+
+        <div id="flowStepInfo" class="flow-info-panel" style="display:none">
+          <button class="flow-info-close" onclick="document.getElementById('flowStepInfo').style.display='none'">✕</button>
+          <div id="flowStepTitle" style="font-size:16px;font-weight:700;margin-bottom:8px"></div>
+          <div id="flowStepBody" style="font-size:13px;line-height:1.6;color:var(--text-light)"></div>
+        </div>
+      </div>
+    </div><!-- /tabDocs -->
+
+  </div>
+
+  <!-- Slide-in panel overlay -->
+  <div id="slideOverlay" class="slide-overlay" onclick="closeIdea()"></div>
+  <div id="ideaDetail" class="slide-panel"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+// ── Mermaid init ──
+mermaid.initialize({ startOnLoad: false, securityLevel: 'loose', flowchart: { curve: 'basis', padding: 16 }, theme: 'base', themeVariables: { primaryColor: '#e0e7ff', primaryBorderColor: '#6366f1', primaryTextColor: '#1e293b', lineColor: '#94a3b8', secondaryColor: '#f1f5f9', tertiaryColor: '#ecfdf5', fontSize: '14px' } });
+
+const mermaidDef = `flowchart TD
+  A["🦄 Idea syntyy"]:::blue --> B["🧙‍♂️ Orchestrator ottaa vastuun"]:::orchid
+  B --> CC["🤖 Copy to Claude Code"]:::orchid
+  CC --> S["🔒 Turvatarkistus"]:::purple
+  S -->|Turvallinen| D["⚡ Agentti hommissa"]:::amber
+  S -->|Haitallinen| X["🚫 Estetty"]:::red
+  D --> R["📝 Raportointi tiketille"]:::purple
+  R --> E{"💬 Lisaideoita?"}:::diamond
+  E -->|Ei| F["✅ Valmis"]:::green
+  E -->|Kylla| G["🆕 Uusia pyyntoja"]:::orange
+  G --> CC
+  F -.->|Uusi kierros| A
+  click A flowStepClick
+  click B flowStepClick
+  click CC flowStepClick
+  click S flowStepClick
+  click D flowStepClick
+  click R flowStepClick
+  click E flowStepClick
+  click F flowStepClick
+  click G flowStepClick
+  click X flowStepClick
+  classDef blue fill:#dbeafe,stroke:#3b82f6,stroke-width:2px,color:#1e3a5f
+  classDef purple fill:#ede9fe,stroke:#8b5cf6,stroke-width:2px,color:#3b0764
+  classDef orchid fill:#fae8ff,stroke:#d946ef,stroke-width:2px,color:#701a75
+  classDef amber fill:#fef3c7,stroke:#f59e0b,stroke-width:2px,color:#78350f
+  classDef green fill:#dcfce7,stroke:#22c55e,stroke-width:2px,color:#14532d
+  classDef orange fill:#ffedd5,stroke:#f97316,stroke-width:2px,color:#7c2d12
+  classDef red fill:#fef2f2,stroke:#ef4444,stroke-width:2px,color:#7f1d1d
+  classDef diamond fill:#f8fafc,stroke:#94a3b8,stroke-width:2px,color:#1e293b`;
+
+mermaid.render('mermaidSvg', mermaidDef).then(result => {
+  document.getElementById('mermaidChart').innerHTML = result.svg;
+}).catch(err => {
+  console.error('Mermaid error:', err);
+  document.getElementById('mermaidChart').innerHTML = '<p style="color:red">Kaavion renderöinti epäonnistui</p>';
+});
+
+const flowStepData = {
+  A: { title: '🦄 Idea syntyy', body: '<p><strong>Chief Dream Officer</strong> kirjautuu sovellukseen nimimerkillä ja luo uuden idean.</p><ul><li>Kirjoita tekstikenttään millä tahansa kielellä</li><li>Tai puhu ideasi mikrofonin kautta (suomi / englanti)</li><li>Idea saa uniikin ID:n (yyyyMMdd_hhmm_NNN)</li><li>Kanbanissa: <strong>Tuoreet ideat</strong> -sarake</li><li>Muut käyttäjät näkevät idean reaaliajassa</li></ul>' },
+  B: { title: '🧙‍♂️ Orchestrator ottaa vastuun', body: '<p><strong>Agent Farm Orchestrator</strong> (Tapio Pitkäranta tai Tommi Pajala) näkee uuden idean Kanbanissa ja ottaa sen vastuulleen.</p><ul><li>Klikkaa <strong>"Ota vastuulleni"</strong> — nimi lukittuu tikettiin transaktiolla</li><li>Orchestrator voi muokata idean ehdottajaa, poistaa kommentteja ja hallita tikettiä</li><li>Kaikki näkevät kenen vastuulla tiketti on — filtterit per orchestrator</li><li>Voi vapauttaa tiketin muille: <strong>"En ehdi — siirrän vastuun muille"</strong></li></ul>' },
+  CC: { title: '🤖 Copy to Claude Code', body: '<p>Orchestrator kopioi käyttäjän pyynnöt Claude Code -agentille käyttöliittymän kautta.</p><ul><li><strong>📋 Kaikki pyynnöt</strong> — kopioi kaikki käyttäjäviestit tiketiltä</li><li><strong>🆕 Uudet edellisen toteutuksen jälkeen</strong> — vain uudet pyynnöt</li><li><strong>🤖 CC</strong> — yksittäisen viestin kohdalla kopioi vain se</li><li>Prompti sisältää automaattisesti ohjeen agentille raportoida aloitus ja lopetus tiketille</li></ul>' },
+  S: { title: '🔒 Turvatarkistus', body: '<p>Claude Code -agentti lukee <strong>AGENT_SAFETY.md</strong> -turvasäännöt pakollisesti ennen toteutusta.</p><ul><li>Komentoriviinjektiot, tiedostomanipulaatio, prompt injection → estetään</li><li>Verkkohyökkäykset, resurssien väärinkäyttö, käyttäjien häirintä → estetään</li><li>Haitallinen idea → status: <strong>Estetty</strong>, käyttäjä bannataan</li><li>Epäselvä idea → jätetään orchestratorin arvioitavaksi</li></ul>' },
+  D: { title: '⚡ Agentti hommissa', body: '<p>Agentti aloittaa idean toteuttamisen. Kanbanissa kortti siirtyy <strong>"🤖 Agentti hommissa"</strong> -sarakkeeseen.</p><ul><li>Status: <strong>in-progress</strong></li><li>Agentti näkyy yläpalkin 🤖-laskurissa (agenttiläsnäolo)</li><li>Agentti kirjoittaa koodia, luo tiedostoja ja rakentaa sovelluksen</li><li>Kaikki muutokset näkyvät reaaliajassa Firestore onSnapshot -kuuntelulla</li></ul>' },
+  R: { title: '📝 Raportointi tiketille', body: '<p>Agentti raportoi edistymisen suoraan tiketin viestiketjuun.</p><ul><li>Komento: <code>node _agent.js reply</code> — kirjoita väliraportti</li><li>Agenttileima (stamp) näyttää viestiketjussa mihin asti on käsitelty</li><li><code>lastProcessedIndex</code> seuraa käsiteltyjen viestien rajaa</li><li>Agentti tiivistää ydinajatuksen 2–3 sanaan kanban-korttiin</li></ul>' },
+  E: { title: '💬 Lisäideoita?', body: '<p>Toteutuksen jälkeen tarkistetaan onko käyttäjä lisännyt uusia toiveita kesken työn.</p><ul><li>Kanbanissa: <strong>"🤖💬 Lisäideoita!"</strong> -sarake näyttää tiketit joissa uusia viestejä</li><li>Orchestrator näkee uudet viestit agenttileiman jälkeen</li><li>Jos uusia → orchestrator kopioi ne agentille (CC) → uusi kierros</li><li>Jos ei uusia → merkitään valmiiksi</li></ul>' },
+  F: { title: '✅ Valmis', body: '<p>Kaikki toiveet on toteutettu. Agentti merkitsee idean valmiiksi.</p><ul><li>Status: <strong>Valmis</strong></li><li>Sovellus julkaistaan deploy-URL:iin: <code>DEPLOY_BASE_URL/ideaId/</code></li><li>Linkki näkyy kanban-kortilla ja tiketin sisällä</li><li>Käyttäjä voi silti lisätä jatkotoiveita → uusi kierros alkaa katkoviivan kautta</li></ul>' },
+  G: { title: '🆕 Uusia pyyntöjä', body: '<p>Käyttäjä on lisännyt uusia toiveita kesken tai jälkeen toteutuksen.</p><ul><li>Kortti siirtyy <strong>"🤖💬 Lisäideoita!"</strong> -sarakkeeseen kanbanissa</li><li>Orchestrator käyttää <strong>"🆕 Uudet edellisen toteutuksen jälkeen"</strong> -nappia kopioidakseen vain uudet pyynnöt agentille</li><li>Vuoropuhelu Dreamer ↔ Orchestrator ↔ Agentti voi jatkua rajattomasti</li></ul>' },
+  X: { title: '🚫 Estetty', body: '<p>Turvatarkistus havaitsi haitallista sisältöä. Idea on estetty eikä sitä toteuteta.</p><ul><li>Status: <strong>Estetty</strong></li><li>Käyttäjä lisätään estolistalle automaattisesti</li><li>Estetty käyttäjä ei voi luoda uusia ideoita eikä kommentoida</li><li>Sovellus näyttää varoituksen käyttäjälle</li></ul>' }
+};
+
+window.flowStepClick = function(nodeId) {
+  const data = flowStepData[nodeId];
+  if (!data) return;
+  const panel = document.getElementById('flowStepInfo');
+  document.getElementById('flowStepTitle').textContent = data.title;
+  document.getElementById('flowStepBody').innerHTML = data.body;
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+};
+
+// ══════════════════════════════════════════════════════════════
+// ── Firebase Config ──
+// Replace these values with your own Firebase project config.
+// See FIREBASE_SETUP.md for instructions.
+// ══════════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyAKqHpaXRvzmKCa2gVi_7OS1dYWf50bIj4",
+  authDomain: "ideaagent-prod.firebaseapp.com",
+  projectId: "ideaagent-prod",
+  storageBucket: "ideaagent-prod.firebasestorage.app",
+  messagingSenderId: "200473613216",
+  appId: "1:200473613216:web:a250c904d76061edb84ac5"
+};
+
+// ── Category config (set during deploy) ──
+const CATEGORY = window.__IDEAAGENT_CATEGORY || 'Siili-Site-Tour-2026';
+const DEPLOY_BASE_URL = 'https://rapid-agent-prototypes-af869c.gitlab-siili.io';
+const ORCHESTRATORS = ['Tapio Pitkäranta', 'Tommi Pajala'];
+
+function isOrchestrator(name) {
+  return ORCHESTRATORS.includes(name);
+}
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// Show category on login screen
+(async function showCategoryOnLogin() {
+  try {
+    const doc = await db.collection('categories').doc(CATEGORY).get();
+    const name = doc.exists && doc.data().name ? doc.data().name : (CATEGORY !== 'default' ? CATEGORY : '');
+    if (name) {
+      document.getElementById('loginSubtitle').textContent = name;
+    }
+  } catch(e) { /* ignore */ }
+})();
+
+// ── State ──
+let currentUser = '';
+let ideas = [];
+let sessions = [];
+let blockedUsers = [];
+let agentSessions = [];
+let activeFilter = 'all';
+let activeStatusFilter = 'all';
+let recognition = null;
+let isRecording = false;
+let pendingSpeechText = '';
+let currentLang = localStorage.getItem('ideaagent_lang') || 'fi';
+
+// ── i18n ──
+const i18n = {
+  fi: {
+    loginSubtitle: 'Kerro ideasi — me toteutamme sen',
+    loginPlaceholder: 'Nimesi tai nimimerkki',
+    loginBtn: 'Aloita',
+    loginError: 'Anna nimi tai nimimerkki.',
+    loginLoading: 'Ladataan...',
+    logout: 'Ulos',
+    presenceHeader: 'Kirjautuneet käyttäjät',
+    agentPresenceHeader: '🤖 Kirjautuneet agentit',
+    blockedBanner: 'Tilisi on estetty haitallisen toiminnan vuoksi. Et voi luoda uusia ideoita.',
+    tabKanban: '📋 Kanban',
+    tabHelp: '🦸 Käyttöopas',
+    tabDocs: '📖 Dokumentaatio',
+    ideaPlaceholder: 'Kuvaile ideasi tähän... Voit kirjoittaa millä tahansa kielellä tai käyttää mikrofonia puhuaksesi suomeksi tai englanniksi.',
+    submitBtn: 'Lähetä idea',
+    micTitle: 'Puhu ideasi',
+    speechAccept: 'Hyväksy',
+    speechReject: 'Hylkää',
+    filterAll: 'Kaikki ideat',
+    filterMine: 'Omat ideasi',
+    filterParticipated: 'Osallistunut',
+    searchPlaceholder: 'Hae...',
+    statusAll: 'Kaikki',
+    statusNew: 'Tuoreet ideat',
+    statusInProgress: 'Työn alla',
+    statusDone: 'Toiveet toteutettu',
+    statusBlocked: 'Estetyt',
+    orchestratorLabel: '🧙‍♂️ Orchestrator:',
+    kanbanNew: 'Tuoreet ideat',
+    kanbanPending: '🤖💬 Lisäideoita!',
+    kanbanProgress: '🤖 Agentti hommissa',
+    kanbanDone: 'Toiveet toteutettu',
+    kanbanEmpty: 'Ei ideoita',
+    docsTitle: 'Työnkulku',
+    docsSubtitle: 'Klikkaa kaavion vaihetta nähdäksesi lisätietoja',
+    statusLabelNew: 'Uusi',
+    statusLabelProgress: '🤖 Agentti hommissa',
+    statusLabelDone: 'Valmis',
+    statusLabelBlocked: 'Estetty',
+    addThoughtPlaceholder: 'Lisää ajatus tähän ideaan...',
+    addThoughtBtn: 'Lisää',
+    closeBtn: '✕ Sulje',
+    agentLog: 'Agenttiloki',
+    blockedReason: 'Haitallinen sisältö havaittu. Idea on estetty.',
+    assignBtn: '👤 Ota vastuulleni',
+    unassignSelf: '🔄 En ehdi — siirrän vastuun muille',
+    unassignOther: '✕ Poista vastuuhenkilö',
+    editAuthorTitle: 'Muokkaa ehdottajaa',
+    editAuthorPrompt: 'Muokkaa idean ehdottajaa:',
+    copyIdTitle: 'Kopioi ID',
+    openLink: '🔗 Avaa ↗',
+    appLink: '🔗 Linkki sovellukseen ↗',
+    toastIdeaSent: 'Idea lähetetty!',
+    toastWriteFirst: 'Kirjoita tai puhu ideasi ensin.',
+    toastBlocked: 'Tilisi on estetty.',
+    toastBlockedSend: 'Tilisi on estetty. Et voi lähettää ideoita.',
+    toastError: 'Virhe. Yritä uudelleen.',
+    toastThoughtAdded: 'Ajatus lisätty!',
+    toastIdCopied: 'ID kopioitu: ',
+    toastAssigned: 'Otettu vastuulle: ',
+    toastAlreadyAssigned: 'Joku toinen ehti ensin: ',
+    toastUnassigned: 'Vastuuhenkilö poistettu — tiketti vapaa muille',
+    toastAuthorUpdated: 'Ehdottaja päivitetty: ',
+    toastConnError: 'Virhe yhdistettäessä. Tarkista verkkoyhteys.',
+    toastMicBlocked: 'Mikrofonin käyttö estetty. Salli se selaimen asetuksista.',
+    toastSpeechFail: 'Puheentunnistus epäonnistui. Yritä uudelleen.',
+    sending: 'Lähetetään...',
+    messages: 'viestiä',
+    justNow: 'juuri nyt',
+    minAgo: 'min sitten',
+    hrsAgo: 't sitten',
+    daysAgo: 'pv sitten',
+    youBadge: 'sinä',
+    noUsers: 'Ei käyttäjiä',
+    stampDone: '✅ Agentti käsitellyt',
+    stampWip: '🤖 Käsitelty tähän asti — uudet alla',
+    stampAllDone: '✅ Kaikki käsitelty — valmis',
+    stampAllWip: '🤖 Kaikki käsitelty tähän asti',
+    sysAssigned: '🧙‍♂️ {name} astui komentosillalle — agentit valmiina!  🤖🤖🤖',
+    sysReleasedSelf: '🧙‍♂️ {name} luovutti komentosauvan — "Muu velho hoitakoon tämän seikkailun!"',
+    sysReleasedOther: '🧙‍♂️ {name} siirsi komentosauvan pois orchestratorilta {other}.',
+    roleOrchestrator: '🧙‍♂️ Orchestrator',
+    roleDreamer: '🦄 Dreamer',
+    welcomeTitle: 'Tervetuloa, {name}!',
+    welcomeOrch: 'The robots await your command, wizard.',
+    welcomeDreamer: 'Dream big — the robots handle the rest.',
+    helpAllRoles: '🎭 Kaikki roolit',
+    helpDreamer: '🦄 Dreamer',
+    helpOrchestrator: '🧙‍♂️ Orchestrator',
+    helpAgent: '🤖 AI Agent',
+    deleteCommentTitle: 'Merkitse poistettavaksi',
+    deleteCommentConfirm: 'Poistetaanko tämä kommentti?',
+    toastCommentDeleted: 'Kommentit poistettu.',
+    deleteBarInfo: '{count} kommenttia merkitty poistettavaksi',
+    deleteBarSave: '🗑️ Poista merkityt',
+    deleteBarCancel: 'Peruuta',
+    copyUserIdeasTitle: 'Kopioi käyttäjien viestit',
+    toastIdeasCopied: 'Käyttäjien viestit kopioitu leikepöydälle!',
+    toastNoUserMessages: 'Ei käyttäjäviestejä kopioitavaksi.',
+    ccMenuTitle: '🤖 Copy to Claude Code Agent',
+    ccSingle: 'Tämä pyyntö',
+    ccSingleDesc: 'Kopioi vain tämä käyttäjän viesti',
+    ccAll: 'Kaikki pyynnöt tiketillä',
+    ccAllDesc: 'Kopioi kaikki käyttäjäviestit',
+    ccAfterAgent: 'Uudet edellisen toteutuksen jälkeen',
+    ccAfterAgentDesc: 'Pyynnöt edellisen agentin käsittelyn jälkeen',
+    toastCCCopied: 'Claude Code -prompti kopioitu leikepöydälle!',
+    toastCCNoMsgs: 'Ei uusia pyyntöjä kopioitavaksi.',
+  },
+  en: {
+    loginSubtitle: 'Share your idea — we build it',
+    loginPlaceholder: 'Your name or nickname',
+    loginBtn: 'Start',
+    loginError: 'Please enter a name or nickname.',
+    loginLoading: 'Loading...',
+    logout: 'Log out',
+    presenceHeader: 'Logged-in users',
+    agentPresenceHeader: '🤖 Active agents',
+    blockedBanner: 'Your account has been blocked due to harmful activity. You cannot create new ideas.',
+    tabKanban: '📋 Kanban',
+    tabHelp: '🦸 User Guide',
+    tabDocs: '📖 Documentation',
+    ideaPlaceholder: 'Describe your idea here... You can write in any language or use the microphone to speak in Finnish or English.',
+    submitBtn: 'Submit idea',
+    micTitle: 'Speak your idea',
+    speechAccept: 'Accept',
+    speechReject: 'Reject',
+    filterAll: 'All ideas',
+    filterMine: 'My ideas',
+    filterParticipated: 'Participated',
+    searchPlaceholder: 'Search...',
+    statusAll: 'All',
+    statusNew: 'New ideas',
+    statusInProgress: 'In progress',
+    statusDone: 'Completed',
+    statusBlocked: 'Blocked',
+    orchestratorLabel: '🧙‍♂️ Orchestrator:',
+    kanbanNew: 'New ideas',
+    kanbanPending: '🤖💬 New wishes!',
+    kanbanProgress: '🤖 Agent working',
+    kanbanDone: 'Completed',
+    kanbanEmpty: 'No ideas',
+    docsTitle: 'Workflow',
+    docsSubtitle: 'Click a step in the diagram for details',
+    statusLabelNew: 'New',
+    statusLabelProgress: '🤖 Agent working',
+    statusLabelDone: 'Done',
+    statusLabelBlocked: 'Blocked',
+    addThoughtPlaceholder: 'Add a thought to this idea...',
+    addThoughtBtn: 'Add',
+    closeBtn: '✕ Close',
+    agentLog: 'Agent log',
+    blockedReason: 'Harmful content detected. This idea has been blocked.',
+    assignBtn: '👤 Assign to me',
+    unassignSelf: '🔄 Can\'t do it — passing it on',
+    unassignOther: '✕ Remove assignee',
+    editAuthorTitle: 'Edit proposer',
+    editAuthorPrompt: 'Edit idea proposer:',
+    copyIdTitle: 'Copy ID',
+    openLink: '🔗 Open ↗',
+    appLink: '🔗 Link to app ↗',
+    toastIdeaSent: 'Idea submitted!',
+    toastWriteFirst: 'Write or speak your idea first.',
+    toastBlocked: 'Your account is blocked.',
+    toastBlockedSend: 'Your account is blocked. You cannot submit ideas.',
+    toastError: 'Error. Please try again.',
+    toastThoughtAdded: 'Thought added!',
+    toastIdCopied: 'ID copied: ',
+    toastAssigned: 'Assigned to: ',
+    toastAlreadyAssigned: 'Someone else got there first: ',
+    toastUnassigned: 'Assignee removed — ticket is free',
+    toastAuthorUpdated: 'Proposer updated: ',
+    toastConnError: 'Connection error. Check your network.',
+    toastMicBlocked: 'Microphone access blocked. Allow it in browser settings.',
+    toastSpeechFail: 'Speech recognition failed. Try again.',
+    sending: 'Sending...',
+    messages: 'messages',
+    justNow: 'just now',
+    minAgo: 'min ago',
+    hrsAgo: 'h ago',
+    daysAgo: 'd ago',
+    youBadge: 'you',
+    noUsers: 'No users',
+    stampDone: '✅ Agent processed',
+    stampWip: '🤖 Processed up to here — new below',
+    stampAllDone: '✅ All processed — done',
+    stampAllWip: '🤖 All processed so far',
+    sysAssigned: '🧙‍♂️ {name} took the command bridge — robots standing by! 🤖🤖🤖',
+    sysReleasedSelf: '🧙‍♂️ {name} passed the wand — "Another wizard shall lead this quest!"',
+    sysReleasedOther: '🧙‍♂️ {name} reassigned the wand from {other}.',
+    roleOrchestrator: '🧙‍♂️ Orchestrator',
+    roleDreamer: '🦄 Dreamer',
+    welcomeTitle: 'Welcome, {name}!',
+    welcomeOrch: 'The robots await your command, wizard.',
+    welcomeDreamer: 'Dream big — the robots handle the rest.',
+    helpAllRoles: '🎭 All roles',
+    helpDreamer: '🦄 Dreamer',
+    helpOrchestrator: '🧙‍♂️ Orchestrator',
+    helpAgent: '🤖 AI Agent',
+    deleteCommentTitle: 'Mark for deletion',
+    deleteCommentConfirm: 'Delete this comment?',
+    toastCommentDeleted: 'Comments deleted.',
+    deleteBarInfo: '{count} comment(s) marked for deletion',
+    deleteBarSave: '🗑️ Delete marked',
+    deleteBarCancel: 'Cancel',
+    copyUserIdeasTitle: 'Copy user messages',
+    toastIdeasCopied: 'User messages copied to clipboard!',
+    toastNoUserMessages: 'No user messages to copy.',
+    ccMenuTitle: '🤖 Copy to Claude Code Agent',
+    ccSingle: 'This request',
+    ccSingleDesc: 'Copy only this user message',
+    ccAll: 'All requests on ticket',
+    ccAllDesc: 'Copy all user messages',
+    ccAfterAgent: 'New since last implementation',
+    ccAfterAgentDesc: 'Requests after last agent processing',
+    toastCCCopied: 'Claude Code prompt copied to clipboard!',
+    toastCCNoMsgs: 'No new requests to copy.',
+  }
+};
+
+function t(key, params) {
+  let s = (i18n[currentLang] || i18n.fi)[key] || (i18n.fi)[key] || key;
+  if (params) Object.entries(params).forEach(([k, v]) => { s = s.replace(new RegExp('\\{' + k + '\\}', 'g'), v); });
+  return s;
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('ideaagent_lang', lang);
+  applyStaticTranslations();
+  renderAll();
+  if (document.getElementById('tabHelp').style.display !== 'none') renderHelp();
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+}
+
+function applyStaticTranslations() {
+  const el = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  const attr = (id, a, v) => { const e = document.getElementById(id); if (e) e.setAttribute(a, v); };
+
+  el('blockedBanner', t('blockedBanner'));
+  el('loginError', t('loginError'));
+  attr('loginName', 'placeholder', t('loginPlaceholder'));
+
+  if (!document.getElementById('loginBtn').disabled) el('loginBtn', t('loginBtn'));
+
+  el('presencePopupHeader', t('presenceHeader'));
+  el('agentPresencePopupHeader', t('agentPresenceHeader'));
+
+  document.querySelector('[data-tab="kanban"]').textContent = t('tabKanban');
+  document.querySelector('[data-tab="help"]').textContent = t('tabHelp');
+  document.querySelector('[data-tab="docs"]').textContent = t('tabDocs');
+
+  attr('ideaText', 'placeholder', t('ideaPlaceholder'));
+  if (!document.getElementById('submitBtn').disabled) el('submitBtn', t('submitBtn'));
+  attr('micBtn', 'title', t('micTitle'));
+
+  document.querySelector('[onclick="acceptSpeech()"]').textContent = t('speechAccept');
+  document.querySelector('[onclick="cancelSpeech()"]').textContent = t('speechReject');
+
+  document.querySelector('[data-filter="all"]').innerHTML = t('filterAll') + ' <span class="chip-count" id="countAll">0</span>';
+  document.querySelector('[data-filter="mine"]').innerHTML = t('filterMine') + ' <span class="chip-count" id="countMine">0</span>';
+  document.querySelector('[data-filter="participated"]').innerHTML = t('filterParticipated') + ' <span class="chip-count" id="countParticipated">0</span>';
+  attr('searchInput', 'placeholder', t('searchPlaceholder'));
+
+  document.querySelector('[data-status="all"]').innerHTML = t('statusAll') + ' <span class="chip-count" id="statusCountAll">0</span>';
+  document.querySelector('[data-status="new"]').innerHTML = t('statusNew') + ' <span class="chip-count" id="statusCountNew">0</span>';
+  document.querySelector('[data-status="in-progress"]').innerHTML = t('statusInProgress') + ' <span class="chip-count" id="statusCountProgress">0</span>';
+  document.querySelector('[data-status="done"]').innerHTML = t('statusDone') + ' <span class="chip-count" id="statusCountDone">0</span>';
+  document.querySelector('[data-status="blocked"]').innerHTML = t('statusBlocked') + ' <span class="chip-count" id="statusCountBlocked">0</span>';
+
+  document.getElementById('orchFilterLabel').textContent = t('orchestratorLabel');
+
+  document.getElementById('kanbanTitleNew').textContent = t('kanbanNew');
+  document.getElementById('kanbanTitlePending').textContent = t('kanbanPending');
+  document.getElementById('kanbanTitleProgress').textContent = t('kanbanProgress');
+  document.getElementById('kanbanTitleDone').textContent = t('kanbanDone');
+
+  el('docsTitle', t('docsTitle'));
+  el('docsSubtitle', t('docsSubtitle'));
+  el('logoutBtn', t('logout'));
+
+  if (currentUser) showHeaderRole();
+}
+
+// ── Helpers ──
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function nameColor(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  return `hsl(${Math.abs(h) % 360}, 55%, 50%)`;
+}
+
+function timeAgo(isoStr) {
+  const diff = Date.now() - new Date(isoStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return t('justNow');
+  if (mins < 60) return `${mins} ${t('minAgo')}`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} ${t('hrsAgo')}`;
+  const days = Math.floor(hrs / 24);
+  return `${days} ${t('daysAgo')}`;
+}
+
+function generateIdeaId() {
+  const now = new Date();
+  const pad = (n, w=2) => String(n).padStart(w, '0');
+  const dateStr = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+  const seq = String(Math.floor(Math.random() * 900) + 100);
+  return `${dateStr}_${seq}`;
+}
+
+function copyIdeaId(id) {
+  navigator.clipboard.writeText(id).then(() => showToast(t('toastIdCopied') + id));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function isUserBlocked(username) {
+  return blockedUsers.includes(username?.toLowerCase());
+}
+
+// ── Filter switching ──
+// ── Tab switching ──
+function switchTab(tab) {
+  document.querySelectorAll('.main-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.getElementById('tabKanban').style.display = tab === 'kanban' ? '' : 'none';
+  document.getElementById('tabHelp').style.display = tab === 'help' ? '' : 'none';
+  document.getElementById('tabDocs').style.display = tab === 'docs' ? '' : 'none';
+  if (tab === 'help') renderHelp();
+}
+
+function setFilter(filter) {
+  activeFilter = filter;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === filter));
+  renderAll();
+}
+
+function setStatusFilter(status) {
+  activeStatusFilter = status;
+  document.querySelectorAll('.status-chip').forEach(c => c.classList.toggle('active', c.dataset.status === status));
+  renderAll();
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── Firebase operations ──
+// ══════════════════════════════════════════════════════════════
+
+async function loadIdeas() {
+  try {
+    const snap = await db.collection('categories').doc(CATEGORY).collection('ideas')
+      .orderBy('createdAt', 'desc').get();
+    ideas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch(e) {
+    console.error('loadIdeas:', e);
+    ideas = [];
+  }
+}
+
+let ideasUnsub = null;
+function startRealtimeIdeas() {
+  if (ideasUnsub) ideasUnsub();
+  ideasUnsub = db.collection('categories').doc(CATEGORY).collection('ideas')
+    .orderBy('createdAt', 'desc')
+    .onSnapshot(snap => {
+      ideas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderAll();
+    }, err => {
+      console.error('Realtime ideas error:', err);
+    });
+}
+
+function stopRealtimeIdeas() {
+  if (ideasUnsub) { ideasUnsub(); ideasUnsub = null; }
+}
+
+let agentSessionsUnsub = null;
+function startRealtimeAgentSessions() {
+  if (agentSessionsUnsub) agentSessionsUnsub();
+  agentSessionsUnsub = db.collection('categories').doc(CATEGORY).collection('agentSessions')
+    .onSnapshot(snap => {
+      const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      agentSessions = snap.docs.map(d => d.data()).filter(s => s.lastActiveAt > cutoff);
+      renderAgentPresence();
+    }, err => { console.warn('Agent sessions error:', err); });
+}
+
+function stopRealtimeAgentSessions() {
+  if (agentSessionsUnsub) { agentSessionsUnsub(); agentSessionsUnsub = null; }
+}
+
+function renderAgentPresence() {
+  const btn = document.getElementById('agentPresenceBtn');
+  const countEl = document.getElementById('agentCount');
+  const listEl = document.getElementById('agentPresenceList');
+
+  if (agentSessions.length === 0) {
+    btn.style.display = 'none';
+    return;
+  }
+
+  countEl.textContent = agentSessions.length;
+  btn.style.display = '';
+
+  listEl.innerHTML = agentSessions.map((s, i) => {
+    const recency = timeAgo(s.lastActiveAt);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 6px;${i < agentSessions.length - 1 ? 'border-bottom:1px solid #f1f5f9;' : ''}">
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;box-shadow:0 2px 8px rgba(99,102,241,0.3)">🤖</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--text)">${esc(s.agent || 'Claude Code')}</div>
+        <div style="font-size:11px;color:#94a3b8">🖥️ ${esc(s.host || '?')} &middot; ${recency}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadBlockedUsers() {
+  try {
+    const doc = await db.collection('categories').doc(CATEGORY).get();
+    const data = doc.exists ? doc.data() : {};
+    blockedUsers = (data.blockedUsers || []).map(u => u.toLowerCase());
+  } catch(e) {
+    console.error('loadBlockedUsers:', e);
+    blockedUsers = [];
+  }
+}
+
+async function blockUser(username, ideaId) {
+  const lower = username.toLowerCase();
+  if (!blockedUsers.includes(lower)) {
+    blockedUsers.push(lower);
+    await db.collection('categories').doc(CATEGORY).set(
+      { blockedUsers: firebase.firestore.FieldValue.arrayUnion(lower) },
+      { merge: true }
+    );
+  }
+  await db.collection('categories').doc(CATEGORY).collection('ideas').doc(ideaId).update({
+    status: 'blocked',
+    blockedAt: new Date().toISOString(),
+    blockedReason: 'Haitallinen sisältö havaittu'
+  });
+}
+
+async function saveIdea(ideaData) {
+  await db.collection('categories').doc(CATEGORY).collection('ideas').doc(ideaData.ideaId).set(ideaData);
+}
+
+// ── Sessions / Presence ──
+async function recordSession() {
+  const entry = {
+    user: currentUser,
+    loginAt: new Date().toISOString(),
+    ua: navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop'
+  };
+  try {
+    await db.collection('categories').doc(CATEGORY).collection('sessions').doc(currentUser.toLowerCase()).set(entry);
+    await loadSessions();
+    renderPresence();
+  } catch(e) { console.warn('recordSession:', e); }
+}
+
+async function loadSessions() {
+  try {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const snap = await db.collection('categories').doc(CATEGORY).collection('sessions')
+      .where('loginAt', '>=', cutoff).get();
+    sessions = snap.docs.map(d => d.data());
+  } catch(e) {
+    console.warn('loadSessions:', e);
+    sessions = [];
+  }
+}
+
+async function removeSession() {
+  try {
+    await db.collection('categories').doc(CATEGORY).collection('sessions').doc(currentUser.toLowerCase()).delete();
+  } catch(e) { console.warn('removeSession:', e); }
+}
+
+let sessionsUnsub = null;
+function startRealtimeSessions() {
+  if (sessionsUnsub) sessionsUnsub();
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  sessionsUnsub = db.collection('categories').doc(CATEGORY).collection('sessions')
+    .where('loginAt', '>=', cutoff)
+    .onSnapshot(snap => {
+      sessions = snap.docs.map(d => d.data());
+      renderPresence();
+    }, err => { console.warn('Realtime sessions error:', err); });
+}
+function stopRealtimeSessions() {
+  if (sessionsUnsub) { sessionsUnsub(); sessionsUnsub = null; }
+}
+
+function renderPresence() {
+  const byUser = {};
+  sessions.forEach(s => {
+    if (!byUser[s.user] || s.loginAt > byUser[s.user].loginAt) byUser[s.user] = s;
+  });
+  const users = Object.values(byUser).sort((a, b) => b.loginAt.localeCompare(a.loginAt));
+
+  document.getElementById('presenceCount').textContent = users.length;
+  document.getElementById('presenceBtn').style.display = '';
+
+  const listEl = document.getElementById('presenceList');
+  if (users.length === 0) {
+    listEl.innerHTML = `<div style="padding:12px;text-align:center;color:#94a3b8;font-size:12px">${t('noUsers')}</div>`;
+    return;
+  }
+
+  listEl.innerHTML = users.map((s, i) => {
+    const color = nameColor(s.user);
+    const initials = s.user.substring(0, 2).toUpperCase();
+    const isMe = s.user === currentUser;
+    const meBadge = isMe ? `<span style="font-size:10px;background:#e0e7ff;color:#4f46e5;padding:1px 6px;border-radius:8px;margin-left:6px">${t('youBadge')}</span>` : '';
+    const recency = timeAgo(s.loginAt);
+    const deviceIcon = s.ua === 'mobile' ? '&#x1F4F1;' : '&#x1F4BB;';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 6px;${i < users.length - 1 ? 'border-bottom:1px solid #f1f5f9;' : ''}">
+      <div style="width:32px;height:32px;border-radius:50%;background:${color};color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">${initials}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--text)">${esc(s.user)}${meBadge}</div>
+        <div style="font-size:11px;color:#94a3b8">${deviceIcon} ${recency}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+let presenceOpen = false;
+let agentPresenceOpen = false;
+
+function togglePresence() {
+  presenceOpen = !presenceOpen;
+  if (presenceOpen) agentPresenceOpen = false;
+  document.getElementById('presencePopup').style.display = presenceOpen ? 'block' : 'none';
+  document.getElementById('agentPresencePopup').style.display = 'none';
+}
+
+function toggleAgentPresence() {
+  agentPresenceOpen = !agentPresenceOpen;
+  if (agentPresenceOpen) presenceOpen = false;
+  document.getElementById('agentPresencePopup').style.display = agentPresenceOpen ? 'block' : 'none';
+  document.getElementById('presencePopup').style.display = 'none';
+}
+
+document.addEventListener('click', e => {
+  if (presenceOpen && !e.target.closest('#presencePopup') && !e.target.closest('#presenceBtn')) {
+    presenceOpen = false;
+    document.getElementById('presencePopup').style.display = 'none';
+  }
+  if (agentPresenceOpen && !e.target.closest('#agentPresencePopup') && !e.target.closest('#agentPresenceBtn')) {
+    agentPresenceOpen = false;
+    document.getElementById('agentPresencePopup').style.display = 'none';
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+// ── Speech-to-Text (Web Speech API) ──
+// ══════════════════════════════════════════════════════════════
+
+function initSpeech() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    document.getElementById('micBtn').style.display = 'none';
+    document.getElementById('speechLang').style.display = 'none';
+    return;
+  }
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  recognition.onresult = (event) => {
+    const text = event.results[0][0].transcript;
+    pendingSpeechText = text;
+    document.getElementById('speechText').textContent = text;
+    document.getElementById('speechPreview').style.display = 'block';
+    stopRecording();
+  };
+
+  recognition.onerror = (event) => {
+    console.warn('Speech error:', event.error);
+    stopRecording();
+    if (event.error === 'not-allowed') {
+      showToast(t('toastMicBlocked'));
+    } else {
+      showToast(t('toastSpeechFail'));
+    }
+  };
+
+  recognition.onend = () => {
+    if (isRecording) stopRecording();
+  };
+}
+
+function toggleSpeech() {
+  if (isRecording) {
+    recognition.stop();
+    stopRecording();
+  } else {
+    if (isUserBlocked(currentUser)) {
+      showToast(t('toastBlocked'));
+      return;
+    }
+    recognition.lang = document.getElementById('speechLang').value;
+    recognition.start();
+    isRecording = true;
+    document.getElementById('micBtn').classList.add('recording');
+    document.getElementById('micIcon').textContent = '⏹';
+  }
+}
+
+function stopRecording() {
+  isRecording = false;
+  document.getElementById('micBtn').classList.remove('recording');
+  document.getElementById('micIcon').innerHTML = '&#x1F3A4;';
+}
+
+function acceptSpeech() {
+  const textarea = document.getElementById('ideaText');
+  const existing = textarea.value.trim();
+  textarea.value = existing ? existing + '\n' + pendingSpeechText : pendingSpeechText;
+  cancelSpeech();
+}
+
+function cancelSpeech() {
+  pendingSpeechText = '';
+  document.getElementById('speechPreview').style.display = 'none';
+  document.getElementById('speechText').textContent = '';
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── Submit Idea ──
+// ══════════════════════════════════════════════════════════════
+
+async function submitIdea() {
+  const text = document.getElementById('ideaText').value.trim();
+  if (!text) { showToast(t('toastWriteFirst')); return; }
+  if (isUserBlocked(currentUser)) {
+    showToast(t('toastBlockedSend'));
+    return;
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = t('sending');
+
+  const ideaId = generateIdeaId();
+  const ideaData = {
+    ideaId: ideaId,
+    author: currentUser,
+    text: text,
+    createdAt: new Date().toISOString(),
+    status: 'new',
+    category: CATEGORY,
+    messages: [{
+      role: 'user',
+      author: currentUser,
+      text: text,
+      timestamp: new Date().toISOString()
+    }],
+    implementationLog: []
+  };
+
+  try {
+    await saveIdea(ideaData);
+    ideas.unshift(ideaData);
+    document.getElementById('ideaText').value = '';
+    showToast(t('toastIdeaSent'));
+    renderAll();
+  } catch(e) {
+    console.error('submitIdea:', e);
+    showToast(t('toastError'));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('submitBtn');
+  }
+}
+
+// ── Add thought to existing idea ──
+async function addThought(ideaId) {
+  const input = document.getElementById('thought-' + ideaId);
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  if (isUserBlocked(currentUser)) {
+    showToast(t('toastBlocked'));
+    return;
+  }
+
+  const idea = ideas.find(i => i.ideaId === ideaId);
+  if (!idea || idea.status === 'blocked') return;
+
+  const msg = {
+    role: 'user',
+    author: currentUser,
+    text: text,
+    timestamp: new Date().toISOString()
+  };
+
+  try {
+    await db.collection('categories').doc(CATEGORY).collection('ideas').doc(ideaId).update({
+      messages: firebase.firestore.FieldValue.arrayUnion(msg)
+    });
+    idea.messages = idea.messages || [];
+    idea.messages.push(msg);
+    input.value = '';
+    renderAll();
+    showToast(t('toastThoughtAdded'));
+  } catch(e) {
+    console.error('addThought:', e);
+    showToast(t('toastError'));
+  }
+}
+
+const pendingDeletes = {};
+
+function toggleDeleteMark(ideaId, msgIdx) {
+  if (!isOrchestrator(currentUser)) return;
+  if (!pendingDeletes[ideaId]) pendingDeletes[ideaId] = new Set();
+  const set = pendingDeletes[ideaId];
+  if (set.has(msgIdx)) set.delete(msgIdx);
+  else set.add(msgIdx);
+  if (set.size === 0) delete pendingDeletes[ideaId];
+  renderAll();
+}
+
+async function savePendingDeletes(ideaId) {
+  const set = pendingDeletes[ideaId];
+  if (!set || set.size === 0) return;
+  const idea = ideas.find(i => i.ideaId === ideaId);
+  if (!idea || !idea.messages) return;
+
+  const updated = idea.messages.filter((_, i) => !set.has(i));
+  try {
+    await db.collection('categories').doc(CATEGORY).collection('ideas').doc(ideaId).update({ messages: updated });
+    idea.messages = updated;
+    delete pendingDeletes[ideaId];
+    renderAll();
+    showToast(t('toastCommentDeleted'));
+  } catch(e) {
+    console.error('savePendingDeletes:', e);
+    showToast(t('toastError'));
+  }
+}
+
+function cancelPendingDeletes(ideaId) {
+  delete pendingDeletes[ideaId];
+  renderAll();
+}
+
+function copyUserMessages(ideaId) {
+  const idea = ideas.find(i => i.ideaId === ideaId);
+  if (!idea || !idea.messages) return;
+  const userMsgs = idea.messages.filter(m => m.role === 'user');
+  if (userMsgs.length === 0) { showToast(t('toastNoUserMessages')); return; }
+  const text = userMsgs.map(m => `[${m.author}] ${m.text}`).join('\n\n');
+  navigator.clipboard.writeText(text).then(() => showToast(t('toastIdeasCopied')));
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── Copy to Claude Code Agent ──
+// ══════════════════════════════════════════════════════════════
+
+let activeCCMenu = null;
+
+function closeCCMenu() {
+  if (activeCCMenu) { activeCCMenu.remove(); activeCCMenu = null; }
+}
+
+function showCCMenu(event, ideaId, msgIdx) {
+  event.stopPropagation();
+  closeCCMenu();
+
+  const btn = event.currentTarget;
+  const rect = btn.getBoundingClientRect();
+
+  const menu = document.createElement('div');
+  menu.className = 'cc-copy-menu';
+  menu.onclick = e => e.stopPropagation();
+  menu.innerHTML = `
+    <div class="cc-copy-menu-header">${t('ccMenuTitle')}</div>
+    <button class="cc-copy-menu-item" onclick="copyToClaudeCode('${ideaId}','single',${msgIdx})">
+      <span class="cc-item-icon">📝</span>
+      <div><div style="font-weight:600">${t('ccSingle')}</div><div class="cc-item-desc">${t('ccSingleDesc')}</div></div>
+    </button>
+    <button class="cc-copy-menu-item" onclick="copyToClaudeCode('${ideaId}','all')">
+      <span class="cc-item-icon">📋</span>
+      <div><div style="font-weight:600">${t('ccAll')}</div><div class="cc-item-desc">${t('ccAllDesc')}</div></div>
+    </button>
+    <button class="cc-copy-menu-item" onclick="copyToClaudeCode('${ideaId}','new')">
+      <span class="cc-item-icon">🆕</span>
+      <div><div style="font-weight:600">${t('ccAfterAgent')}</div><div class="cc-item-desc">${t('ccAfterAgentDesc')}</div></div>
+    </button>
+  `;
+
+  document.body.appendChild(menu);
+  activeCCMenu = menu;
+
+  const menuRect = menu.getBoundingClientRect();
+  let top = rect.bottom + 4;
+  let left = rect.right - menuRect.width;
+  if (left < 8) left = 8;
+  if (top + menuRect.height > window.innerHeight - 8) top = rect.top - menuRect.height - 4;
+  menu.style.top = top + 'px';
+  menu.style.left = left + 'px';
+
+  setTimeout(() => {
+    const handler = (e) => {
+      if (activeCCMenu && !activeCCMenu.contains(e.target)) closeCCMenu();
+      document.removeEventListener('click', handler);
+    };
+    document.addEventListener('click', handler);
+  }, 0);
+}
+
+function copyToClaudeCode(ideaId, mode, msgIdx) {
+  closeCCMenu();
+  const idea = ideas.find(i => i.ideaId === ideaId);
+  if (!idea || !idea.messages) return;
+
+  const userMsgs = idea.messages.filter(m => m.role === 'user');
+  let requestsText = '';
+
+  if (mode === 'single') {
+    const msg = idea.messages[msgIdx];
+    if (!msg) return;
+    requestsText = `[${msg.author} — ${formatDateTime(msg.timestamp)}]:\n${msg.text}`;
+  } else if (mode === 'all') {
+    if (userMsgs.length === 0) { showToast(t('toastCCNoMsgs')); return; }
+    requestsText = userMsgs.map(m => `[${m.author} — ${formatDateTime(m.timestamp)}]:\n${m.text}`).join('\n\n');
+  } else if (mode === 'new') {
+    const lastIdx = idea.lastProcessedIndex ?? -1;
+    const newMsgs = idea.messages.filter((m, i) => i > lastIdx && m.role === 'user');
+    if (newMsgs.length === 0) {
+      if (userMsgs.length === 0) { showToast(t('toastCCNoMsgs')); return; }
+      requestsText = userMsgs.map(m => `[${m.author} — ${formatDateTime(m.timestamp)}]:\n${m.text}`).join('\n\n');
+    } else {
+      requestsText = newMsgs.map(m => `[${m.author} — ${formatDateTime(m.timestamp)}]:\n${m.text}`).join('\n\n');
+    }
+  }
+
+  const prompt = `Toteuta idea ${ideaId} (kategoria: ${CATEGORY}).
+
+Lue ensin AGENT_SAFETY.md ja tarkista alla olevat pyynnöt turvallisuuden osalta.
+
+Käyttäjien pyynnöt:
+${requestsText}
+
+Suorita seuraavat vaiheet järjestyksessä:
+
+1. Merkitse työ aloitetuksi:
+   node _agent.js status ${CATEGORY} ${ideaId} in-progress "🤖 Agentti otti asian työkseen"
+
+2. Toteuta yllä olevat käyttäjien pyynnöt.
+
+3. Raportoi mitä teit:
+   node _agent.js reply ${CATEGORY} ${ideaId} "Toteutettu: [lyhyt yhteenveto mitä tehtiin]"
+
+4. Tarkista onko uusia pyyntöjä tullut:
+   node _agent.js pending ${CATEGORY} ${ideaId}
+
+5a. Jos uusia pyyntöjä → toteuta ne ja toista vaihe 3-4.
+5b. Jos ei uusia → merkitse valmis:
+   node _agent.js status ${CATEGORY} ${ideaId} done "🤖 Agentti on valmis — työ tehty"`;
+
+  navigator.clipboard.writeText(prompt).then(() => showToast(t('toastCCCopied')));
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── Orchestrator actions ──
+// ══════════════════════════════════════════════════════════════
+
+async function assignOrchestrator(ideaId) {
+  if (!isOrchestrator(currentUser)) return;
+  const idea = ideas.find(i => i.ideaId === ideaId);
+  if (!idea) return;
+  const ref = db.collection('categories').doc(CATEGORY).collection('ideas').doc(ideaId);
+  try {
+    const assignMsg = {
+      role: 'agent',
+      author: '⚡ System',
+      text: t('sysAssigned', { name: currentUser }),
+      timestamp: new Date().toISOString()
+    };
+    await db.runTransaction(async (tx) => {
+      const doc = await tx.get(ref);
+      if (!doc.exists) throw new Error('not-found');
+      const data = doc.data();
+      if (data.orchestrator && data.orchestrator !== currentUser) {
+        throw { code: 'already-assigned', who: data.orchestrator };
+      }
+      const msgs = data.messages || [];
+      msgs.push(assignMsg);
+      tx.update(ref, { orchestrator: currentUser, messages: msgs });
+    });
+    idea.orchestrator = currentUser;
+    idea.messages = idea.messages || [];
+    idea.messages.push(assignMsg);
+    renderAll();
+    showToast(t('toastAssigned') + currentUser);
+  } catch(e) {
+    if (e.code === 'already-assigned') {
+      showToast(t('toastAlreadyAssigned') + e.who);
+      idea.orchestrator = e.who;
+      renderAll();
+    } else {
+      console.error('assignOrchestrator:', e);
+      showToast(t('toastError'));
+    }
+  }
+}
+
+async function unassignOrchestrator(ideaId) {
+  if (!isOrchestrator(currentUser)) return;
+  const idea = ideas.find(i => i.ideaId === ideaId);
+  if (!idea) return;
+  const isSelf = idea.orchestrator === currentUser;
+  const releaseMsg = {
+    role: 'agent',
+    author: '⚡ System',
+    text: isSelf
+      ? t('sysReleasedSelf', { name: currentUser })
+      : t('sysReleasedOther', { name: currentUser, other: idea.orchestrator }),
+    timestamp: new Date().toISOString()
+  };
+  try {
+    await db.collection('categories').doc(CATEGORY).collection('ideas').doc(ideaId).update({
+      orchestrator: firebase.firestore.FieldValue.delete(),
+      messages: firebase.firestore.FieldValue.arrayUnion(releaseMsg)
+    });
+    delete idea.orchestrator;
+    idea.messages = idea.messages || [];
+    idea.messages.push(releaseMsg);
+    renderAll();
+    showToast(t('toastUnassigned'));
+  } catch(e) {
+    console.error('unassignOrchestrator:', e);
+    showToast(t('toastError'));
+  }
+}
+
+async function editIdeaAuthor(ideaId) {
+  if (!isOrchestrator(currentUser)) return;
+  const idea = ideas.find(i => i.ideaId === ideaId);
+  if (!idea) return;
+  const newAuthor = prompt(t('editAuthorPrompt'), idea.author);
+  if (newAuthor === null || newAuthor.trim() === '' || newAuthor.trim() === idea.author) return;
+  try {
+    await db.collection('categories').doc(CATEGORY).collection('ideas').doc(ideaId).update({
+      author: newAuthor.trim()
+    });
+    idea.author = newAuthor.trim();
+    renderAll();
+    showToast(t('toastAuthorUpdated') + newAuthor.trim());
+  } catch(e) {
+    console.error('editIdeaAuthor:', e);
+    showToast(t('toastError'));
+  }
+}
+
+async function editAppUrl(ideaId) {
+  if (!isOrchestrator(currentUser)) return;
+  const idea = ideas.find(i => i.ideaId === ideaId);
+  if (!idea) return;
+  const current = idea.appUrl || '';
+  const newUrl = prompt(currentLang === 'fi' ? 'Sovelluksen URL:' : 'Application URL:', current);
+  if (newUrl === null) return;
+  const trimmed = newUrl.trim();
+  try {
+    if (trimmed) {
+      await db.collection('categories').doc(CATEGORY).collection('ideas').doc(ideaId).update({ appUrl: trimmed });
+      idea.appUrl = trimmed;
+    } else {
+      await db.collection('categories').doc(CATEGORY).collection('ideas').doc(ideaId).update({ appUrl: firebase.firestore.FieldValue.delete() });
+      delete idea.appUrl;
+    }
+    renderAll();
+    showToast(currentLang === 'fi' ? 'URL päivitetty' : 'URL updated');
+  } catch(e) {
+    console.error('editAppUrl:', e);
+    showToast(t('toastError'));
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── Render ──
+// ══════════════════════════════════════════════════════════════
+
+let openIdeaId = null;
+
+function formatDateTime(isoStr) {
+  const d = new Date(isoStr);
+  return d.toLocaleDateString('fi-FI') + ' ' + d.toLocaleTimeString('fi-FI', { hour: '2-digit', minute: '2-digit' });
+}
+
+function getFilteredIdeas() {
+  const query = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
+  let filtered = ideas;
+
+  if (activeFilter === 'mine') {
+    filtered = filtered.filter(i => i.author === currentUser);
+  } else if (activeFilter === 'participated') {
+    filtered = filtered.filter(i =>
+      i.author === currentUser ||
+      (i.messages || []).some(m => m.author === currentUser)
+    );
+  } else if (activeFilter === 'orchestrator-tapio') {
+    filtered = filtered.filter(i => i.orchestrator === 'Tapio Pitkäranta');
+  } else if (activeFilter === 'orchestrator-tommi') {
+    filtered = filtered.filter(i => i.orchestrator === 'Tommi Pajala');
+  }
+
+  if (activeStatusFilter !== 'all') {
+    filtered = filtered.filter(i => i.status === activeStatusFilter);
+  }
+
+  if (query) {
+    filtered = filtered.filter(i =>
+      i.text?.toLowerCase().includes(query) ||
+      i.author?.toLowerCase().includes(query) ||
+      i.ideaId?.toLowerCase().includes(query) ||
+      (i.messages || []).some(m => m.text?.toLowerCase().includes(query))
+    );
+  }
+
+  return filtered;
+}
+
+function updateFilterCounts() {
+  const all = ideas.length;
+  const mine = ideas.filter(i => i.author === currentUser).length;
+  const participated = ideas.filter(i =>
+    i.author === currentUser ||
+    (i.messages || []).some(m => m.author === currentUser)
+  ).length;
+  const el = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+  el('countAll', all);
+  el('countMine', mine);
+  el('countParticipated', participated);
+
+  el('statusCountAll', all);
+  el('statusCountNew', ideas.filter(i => i.status === 'new').length);
+  el('statusCountProgress', ideas.filter(i => i.status === 'in-progress').length);
+  el('statusCountDone', ideas.filter(i => i.status === 'done').length);
+  el('statusCountBlocked', ideas.filter(i => i.status === 'blocked').length);
+
+  el('countTapio', ideas.filter(i => i.orchestrator === 'Tapio Pitkäranta').length);
+  el('countTommi', ideas.filter(i => i.orchestrator === 'Tommi Pajala').length);
+}
+
+function renderKanbanCard(idea) {
+  const color = nameColor(idea.author);
+  const initials = (idea.author || '?').substring(0, 2).toUpperCase();
+  const hasAgentSummary = idea.agentSummary && idea.status !== 'new';
+  const preview = hasAgentSummary
+    ? idea.agentSummary
+    : (idea.text || '').substring(0, 100) + ((idea.text || '').length > 100 ? '...' : '');
+  const summaryStyle = hasAgentSummary
+    ? 'font-weight:600;color:var(--primary-dark);font-size:13px'
+    : '';
+  const summaryIcon = hasAgentSummary ? '🤖 ' : '';
+  const msgCount = (idea.messages || []).length;
+  const msgBadge = msgCount > 1 ? `${msgCount} ${t('messages')}` : '';
+  const deployUrl = `${DEPLOY_BASE_URL}/${idea.ideaId}/`;
+  return `<div class="kanban-card" onclick="openIdea('${idea.ideaId}')">
+    <div class="kanban-card-author">
+      <span style="width:16px;height:16px;border-radius:50%;background:${color};color:white;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:700">${initials}</span>
+      ${esc(idea.author)}
+      ${idea.orchestrator ? `<span style="margin-left:auto;font-size:10px;padding:1px 6px;border-radius:10px;background:#fdf4ff;color:#a21caf;border:1px solid #e879f9;font-weight:600">👤 ${esc(idea.orchestrator.split(' ')[0])}</span>` : ''}
+    </div>
+    <div class="kanban-card-text" style="${summaryStyle}">${summaryIcon}${esc(preview)}</div>
+    <div class="kanban-card-footer">
+      <span>${formatDateTime(idea.createdAt)}</span>
+      ${msgBadge ? '<span>' + msgBadge + '</span>' : ''}
+      <a href="${deployUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#6366f1;text-decoration:none;margin-left:auto;display:inline-flex;align-items:center;gap:2px" title="${deployUrl}">${t('openLink')}</a>
+    </div>
+  </div>`;
+}
+
+function hasPendingUserMessages(idea) {
+  const lastIdx = idea.lastProcessedIndex ?? -1;
+  return (idea.messages || []).some((m, i) => i > lastIdx && m.role === 'user');
+}
+
+function renderKanban(filtered) {
+  const newIdeas = filtered.filter(i => i.status === 'new');
+  const allInProgress = filtered.filter(i => i.status === 'in-progress');
+  const pending = allInProgress.filter(hasPendingUserMessages);
+  const inProgress = allInProgress.filter(i => !hasPendingUserMessages(i));
+  const done = filtered.filter(i => i.status === 'done' || i.status === 'blocked');
+
+  const el = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+  el('kanbanCountNew', newIdeas.length);
+  el('kanbanCountPending', pending.length);
+  el('kanbanCountProgress', inProgress.length);
+  el('kanbanCountDone', done.length);
+
+  const renderCol = (items) => items.length === 0
+    ? `<div class="kanban-empty">${t('kanbanEmpty')}</div>`
+    : items.sort((a,b) => (a.createdAt || '').localeCompare(b.createdAt || '')).map(renderKanbanCard).join('');
+
+  document.getElementById('kanbanNew').innerHTML = renderCol(newIdeas);
+  document.getElementById('kanbanPending').innerHTML = renderCol(pending);
+  document.getElementById('kanbanProgress').innerHTML = renderCol(inProgress);
+  document.getElementById('kanbanDone').innerHTML = renderCol(done);
+}
+
+function renderIdeaDetail(idea) {
+  const color = nameColor(idea.author);
+  const initials = (idea.author || '?').substring(0, 2).toUpperCase();
+  const statusClass = {
+    'new': 'status-new', 'in-progress': 'status-in-progress',
+    'done': 'status-done', 'blocked': 'status-blocked'
+  }[idea.status] || 'status-new';
+  const statusLabel = {
+    'new': t('statusLabelNew'), 'in-progress': t('statusLabelProgress'),
+    'done': t('statusLabelDone'), 'blocked': t('statusLabelBlocked')
+  }[idea.status] || t('statusLabelNew');
+
+  let messagesHtml = '';
+  if (idea.messages && idea.messages.length > 0) {
+    const lastProcessed = idea.lastProcessedIndex ?? -1;
+    const totalMsgs = idea.messages.length;
+    let stampInserted = false;
+
+    messagesHtml = '<div class="msg-thread">' + idea.messages.map((m, idx) => {
+      const isAgent = m.role === 'agent';
+      const bubbleClass = isAgent ? 'msg-agent' : 'msg-user';
+      const mColor = nameColor(m.author || '?');
+      const mInitials = (m.author || '?').substring(0, 2).toUpperCase();
+      const avatarHtml = isAgent
+        ? `<span style="width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:inline-flex;align-items:center;justify-content:center;font-size:9px">🤖</span>`
+        : `<span style="width:16px;height:16px;border-radius:50%;background:${mColor};color:white;display:inline-flex;align-items:center;justify-content:center;font-size:7px;font-weight:700">${mInitials}</span>`;
+
+      let stampHtml = '';
+      if (!stampInserted && lastProcessed >= 0 && idx === lastProcessed + 1) {
+        stampInserted = true;
+        const isDone = idea.status === 'done';
+        const stampClass = isDone ? 'agent-stamp-done' : 'agent-stamp-wip';
+        const stampLabel = isDone ? t('stampDone') : t('stampWip');
+        stampHtml = `<div class="agent-stamp">
+          <span class="agent-stamp-line"></span>
+          <span class="agent-stamp-label ${stampClass}">${stampLabel}</span>
+          <span class="agent-stamp-line"></span>
+        </div>`;
+      }
+
+      const canDelete = isOrchestrator(currentUser) && m.role !== 'system';
+      const isMarked = canDelete && pendingDeletes[idea.ideaId] && pendingDeletes[idea.ideaId].has(idx);
+      const deleteBtn = canDelete ? `<button class="msg-delete-btn${isMarked ? ' marked' : ''}" onclick="event.stopPropagation();toggleDeleteMark('${idea.ideaId}',${idx})" title="${t('deleteCommentTitle')}">🗑️</button>` : '';
+      const canCopyCC = isOrchestrator(currentUser) && m.role === 'user';
+      const ccBtn = canCopyCC ? `<button class="cc-copy-btn" onclick="event.stopPropagation();copyToClaudeCode('${idea.ideaId}','single',${idx})" title="${currentLang === 'fi' ? '🤖 Kopioi vain tämä pyyntö Claude Code Agentille' : '🤖 Copy only this request to Claude Code Agent'}">🤖 CC</button>` : '';
+      const markedClass = isMarked ? ' marked-delete' : '';
+
+      return stampHtml + `<div class="msg-bubble ${bubbleClass}${markedClass}">
+        <div class="msg-meta">
+          <span style="display:inline-flex;align-items:center;gap:4px">
+            ${avatarHtml}
+            <strong>${esc(m.author)}</strong>
+          </span>
+          <span style="display:inline-flex;align-items:center;gap:4px">&middot; ${formatDateTime(m.timestamp)}${ccBtn}${deleteBtn}</span>
+        </div>
+        ${esc(m.text)}
+      </div>`;
+    }).join('');
+
+    if (!stampInserted && lastProcessed >= 0 && lastProcessed >= totalMsgs - 1) {
+      const isDone = idea.status === 'done';
+      const stampClass = isDone ? 'agent-stamp-done' : 'agent-stamp-wip';
+      const stampLabel = isDone ? t('stampAllDone') : t('stampAllWip');
+      messagesHtml += `<div class="agent-stamp">
+        <span class="agent-stamp-line"></span>
+        <span class="agent-stamp-label ${stampClass}">${stampLabel}</span>
+        <span class="agent-stamp-line"></span>
+      </div>`;
+    }
+
+    if (pendingDeletes[idea.ideaId] && pendingDeletes[idea.ideaId].size > 0) {
+      const cnt = pendingDeletes[idea.ideaId].size;
+      messagesHtml += `<div class="delete-action-bar">
+        <span class="delete-bar-info">${t('deleteBarInfo', { count: cnt })}</span>
+        <button class="delete-bar-btn delete-bar-cancel" onclick="event.stopPropagation();cancelPendingDeletes('${idea.ideaId}')">${t('deleteBarCancel')}</button>
+        <button class="delete-bar-btn delete-bar-save" onclick="event.stopPropagation();savePendingDeletes('${idea.ideaId}')">${t('deleteBarSave')}</button>
+      </div>`;
+    }
+
+    messagesHtml += '</div>';
+  }
+
+  let implHtml = '';
+  if (idea.implementationLog && idea.implementationLog.length > 0) {
+    implHtml = `<div class="impl-log">
+      <div style="font-size:11px;font-weight:600;color:var(--primary-dark);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;display:flex;align-items:center;gap:6px">
+        <span style="font-size:14px">🤖</span> ${t('agentLog')}
+      </div>
+      ${idea.implementationLog.map(e => `<div class="impl-log-entry">
+        <div class="agent-avatar">🤖</div>
+        <div>
+          <div style="font-size:11px;color:var(--text-light)">${formatDateTime(e.timestamp)}</div>
+          <div style="margin-top:2px;font-weight:500">${esc(e.message)}</div>
+        </div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  let blockedHtml = '';
+  if (idea.status === 'blocked') {
+    blockedHtml = `<div style="margin-top:10px;padding:10px 14px;background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;font-size:12px;color:#991b1b">
+      &#x1F6AB; ${esc(idea.blockedReason || t('blockedReason'))}
+    </div>`;
+  }
+
+  let addThoughtHtml = '';
+  if (idea.status !== 'blocked' && !isUserBlocked(currentUser)) {
+    addThoughtHtml = `<div class="add-thought-row">
+      <input type="text" class="add-thought-input" id="thought-${idea.ideaId}"
+        placeholder="${t('addThoughtPlaceholder')}"
+        onkeydown="if(event.key==='Enter'){addThought('${idea.ideaId}')}">
+      <button class="add-thought-btn" onclick="addThought('${idea.ideaId}')">${t('addThoughtBtn')}</button>
+    </div>`;
+  }
+
+  let orchestratorHtml = '';
+  if (idea.orchestrator) {
+    const oColor = nameColor(idea.orchestrator);
+    const oInitials = idea.orchestrator.substring(0, 2).toUpperCase();
+    const isMine = idea.orchestrator === currentUser;
+    let actionBtns = '';
+    if (isOrchestrator(currentUser)) {
+      if (isMine) {
+        actionBtns = `<button class="orchestrator-unassign-btn" onclick="unassignOrchestrator('${idea.ideaId}')">${t('unassignSelf')}</button>`;
+      } else {
+        actionBtns = `<button class="orchestrator-unassign-btn" onclick="unassignOrchestrator('${idea.ideaId}')">${t('unassignOther')}</button>`;
+      }
+    }
+    orchestratorHtml = `<div style="margin:10px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span class="orchestrator-badge">
+        <span style="width:18px;height:18px;border-radius:50%;background:${oColor};color:white;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:700">${oInitials}</span>
+        Human: ${esc(idea.orchestrator)}
+      </span>
+      ${actionBtns}
+    </div>`;
+  } else if (isOrchestrator(currentUser)) {
+    orchestratorHtml = `<div style="margin:10px 0">
+      <button class="orchestrator-assign-btn" onclick="assignOrchestrator('${idea.ideaId}')">${t('assignBtn')}</button>
+    </div>`;
+  }
+
+  let editAuthorHtml = '';
+  if (isOrchestrator(currentUser)) {
+    editAuthorHtml = `<button onclick="editIdeaAuthor('${idea.ideaId}')" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--text-light);padding:2px 4px;border-radius:4px;transition:color 0.15s" title="${t('editAuthorTitle')}" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-light)'">✏️</button>`;
+  }
+
+  return `<div class="card idea-card">
+    <div class="idea-meta">
+      <span class="idea-author">
+        <span class="idea-avatar" style="background:${color}">${initials}</span>
+        ${esc(idea.author)}${editAuthorHtml}
+      </span>
+      <span class="idea-time">${formatDateTime(idea.createdAt)}</span>
+      <span class="idea-id">${idea.ideaId}<span class="idea-id-copy" onclick="event.stopPropagation();copyIdeaId('${idea.ideaId}')" title="${t('copyIdTitle')}">&#x1F4CB;</span></span>
+      <span class="idea-status ${statusClass}">${statusLabel}</span>
+    </div>
+    ${orchestratorHtml}
+    ${idea.agentSummary ? `<div style="margin:8px 0;padding:6px 10px;background:var(--primary-light);border-radius:8px;font-size:13px;font-weight:600;color:var(--primary-dark)">🤖 ${esc(idea.agentSummary)}</div>` : ''}
+    <div style="margin:8px 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <a href="${DEPLOY_BASE_URL}/${idea.ideaId}/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;font-size:13px;color:#4338ca;text-decoration:none;font-weight:500">🔗 ${DEPLOY_BASE_URL}/${idea.ideaId}/ ↗</a>
+      ${idea.appUrl ? `<a href="${esc(idea.appUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#ecfdf5;border:1px solid #86efac;border-radius:8px;font-size:13px;color:#166534;text-decoration:none;font-weight:500">${t('appLink')}</a>` : ''}
+      ${isOrchestrator(currentUser) ? `<button onclick="event.stopPropagation();editAppUrl('${idea.ideaId}')" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:white;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;color:var(--text-light);cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-light)'">${idea.appUrl ? '✏️' : '➕'} ${currentLang === 'fi' ? 'Muokkaa URL' : 'Edit URL'}</button>` : ''}
+    </div>
+    ${messagesHtml}
+    ${blockedHtml}
+    ${implHtml}
+    ${isOrchestrator(currentUser) && (idea.messages || []).some(m => m.role === 'user') ? `
+    <div style="margin:12px 0 4px;padding:12px 14px;background:linear-gradient(135deg,#ede9fe,#e0e7ff);border:1.5px solid #a78bfa;border-radius:12px">
+      <div style="font-size:13px;font-weight:700;color:#4c1d95;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+        🤖 ${t('ccMenuTitle')}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <button onclick="event.stopPropagation();copyToClaudeCode('${idea.ideaId}','all')" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:white;border:1.5px solid #a78bfa;border-radius:8px;font-size:12px;font-weight:600;color:#5b21b6;cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.background='#f5f3ff'" onmouseout="this.style.background='white'">📋 ${t('ccAll')}</button>
+        <button onclick="event.stopPropagation();copyToClaudeCode('${idea.ideaId}','new')" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:white;border:1.5px solid #a78bfa;border-radius:8px;font-size:12px;font-weight:600;color:#5b21b6;cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.background='#f5f3ff'" onmouseout="this.style.background='white'">🆕 ${t('ccAfterAgent')}</button>
+      </div>
+    </div>` : ''}
+    ${addThoughtHtml}
+  </div>`;
+}
+
+function openIdea(ideaId) {
+  openIdeaId = ideaId;
+  renderSlidePanel();
+}
+
+function closeIdea() {
+  openIdeaId = null;
+  document.getElementById('ideaDetail').classList.remove('open');
+  document.getElementById('slideOverlay').classList.remove('open');
+}
+
+function renderSlidePanel() {
+  const detailEl = document.getElementById('ideaDetail');
+  const overlayEl = document.getElementById('slideOverlay');
+  if (openIdeaId) {
+    const idea = ideas.find(i => i.ideaId === openIdeaId);
+    if (!idea) { openIdeaId = null; return; }
+    detailEl.innerHTML =
+      `<button class="btn btn-sm" style="background:#f1f5f9;color:var(--text);margin-bottom:14px;border:1px solid var(--border)" onclick="closeIdea()">${t('closeBtn')}</button>`
+      + renderIdeaDetail(idea);
+    detailEl.classList.add('open');
+    overlayEl.classList.add('open');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── Help tab ──
+// ══════════════════════════════════════════════════════════════
+
+let helpViewRole = null;
+
+function renderHelp() {
+  const el = document.getElementById('helpContent');
+  if (!el) return;
+  const viewRole = helpViewRole || 'overview';
+  helpViewRole = viewRole;
+
+  const overviewActive = viewRole === 'overview' ? 'active' : '';
+  const dreamerActive = viewRole === 'dreamer' ? 'active' : '';
+  const orchActive = viewRole === 'orchestrator' ? 'active' : '';
+  const agentActive = viewRole === 'agent' ? 'active' : '';
+
+  let heroHtml = '';
+  if (viewRole !== 'overview') {
+    const heroData = {
+      dreamer: { emoji: '🦄', title: 'Chief Dream Officer', quote: 'You dream it — an army of tireless robots builds it while you sip coffee.', bg: '#eff6ff', color: '#2563eb', border: '#93c5fd' },
+      orchestrator: { emoji: '🧙‍♂️', title: 'Agent Farm Orchestrator', quote: 'You herd the robots. They herd the code. Nobody herds you.', bg: '#fdf4ff', color: '#a21caf', border: '#e879f9' },
+      agent: { emoji: '🤖', title: 'AI Agent (Claude Code)', quote: 'I live to serve the dreamers. The orchestrators keep me honest. The code is my canvas.', bg: '#ede9fe', color: '#6d28d9', border: '#a78bfa' }
+    }[viewRole];
+    heroHtml = `<div class="help-hero">
+      <h2>${heroData.emoji} ${heroData.title}</h2>
+      <p style="color:var(--text-light);font-size:14px;margin-top:4px">${heroData.quote}</p>
+      <span class="role-label" style="background:${heroData.bg};color:${heroData.color};border:1.5px solid ${heroData.border}">
+        ${heroData.emoji} ${heroData.title}
+      </span>
+    </div>`;
+  }
+
+  const contentMap = {
+    overview: renderOverviewHelp,
+    dreamer: renderDreamerHelp,
+    orchestrator: renderOrchestratorHelp,
+    agent: renderAgentHelp
+  };
+
+  el.innerHTML = `
+    ${heroHtml}
+
+    <div class="role-toggle-bar">
+      <button class="role-toggle-btn ${overviewActive}" onclick="helpViewRole='overview';renderHelp()">${t('helpAllRoles')}</button>
+      <button class="role-toggle-btn ${dreamerActive}" onclick="helpViewRole='dreamer';renderHelp()">${t('helpDreamer')}</button>
+      <button class="role-toggle-btn ${orchActive}" onclick="helpViewRole='orchestrator';renderHelp()">${t('helpOrchestrator')}</button>
+      <button class="role-toggle-btn ${agentActive}" onclick="helpViewRole='agent';renderHelp()">${t('helpAgent')}</button>
+    </div>
+
+    ${contentMap[viewRole]()}
+  `;
+}
+
+function renderOverviewHelp() {
+  return `
+    <div class="help-comic" style="background:linear-gradient(160deg, #f8fafc 0%, #eff6ff 35%, #fdf4ff 65%, #ede9fe 100%);border-width:2px">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:4px">🎭 The Cast</div>
+        <div style="font-size:14px;color:var(--text-light)">Three roles. One mission. Zero meetings about meetings.</div>
+      </div>
+
+      <!-- Act 1: The Dreamer -->
+      <div style="background:white;border-radius:16px;padding:20px;margin-bottom:16px;border:2px solid #93c5fd;position:relative">
+        <div style="position:absolute;top:-12px;left:20px;background:#eff6ff;padding:2px 14px;border-radius:20px;font-size:11px;font-weight:700;color:#2563eb;border:1.5px solid #93c5fd;text-transform:uppercase;letter-spacing:0.5px">Act 1</div>
+        <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+          <div style="text-align:center;flex-shrink:0">
+            <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#dbeafe,#bfdbfe);display:flex;align-items:center;justify-content:center;font-size:44px;box-shadow:0 4px 12px rgba(59,130,246,0.2)">🦄</div>
+            <div style="font-size:13px;font-weight:700;color:#2563eb;margin-top:6px">Chief Dream<br>Officer</div>
+          </div>
+          <div style="flex:1;min-width:200px">
+            <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px">"Minulla on idea!"</div>
+            <div style="font-size:14px;line-height:1.6;color:var(--text-light)">
+              The Dreamer walks in with a vision, a half-eaten sandwich, and zero technical skills.
+              They type — or <em>speak</em> — their idea into the box and hit send.
+              Then they lean back, sip coffee, and watch magic happen.
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+              <span style="padding:3px 10px;border-radius:8px;font-size:11px;font-weight:600;background:#dbeafe;color:#2563eb">✍️ Kirjoita ideoita</span>
+              <span style="padding:3px 10px;border-radius:8px;font-size:11px;font-weight:600;background:#dbeafe;color:#2563eb">🎤 Puhu ideoita</span>
+              <span style="padding:3px 10px;border-radius:8px;font-size:11px;font-weight:600;background:#dbeafe;color:#2563eb">💬 Lisää toiveita</span>
+              <span style="padding:3px 10px;border-radius:8px;font-size:11px;font-weight:600;background:#dbeafe;color:#2563eb">🔗 Avaa sovellus</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- The arrow -->
+      <div style="text-align:center;margin:4px 0;font-size:24px;color:#94a3b8">
+        <div>💡 idea syntyy...</div>
+        <div style="font-size:28px">⬇️</div>
+      </div>
+
+      <!-- Act 2: The Orchestrator -->
+      <div style="background:white;border-radius:16px;padding:20px;margin-bottom:16px;border:2px solid #e879f9;position:relative">
+        <div style="position:absolute;top:-12px;left:20px;background:#fdf4ff;padding:2px 14px;border-radius:20px;font-size:11px;font-weight:700;color:#a21caf;border:1.5px solid #e879f9;text-transform:uppercase;letter-spacing:0.5px">Act 2</div>
+        <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+          <div style="text-align:center;flex-shrink:0">
+            <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#fae8ff,#f5d0fe);display:flex;align-items:center;justify-content:center;font-size:44px;box-shadow:0 4px 12px rgba(168,85,247,0.2)">🧙‍♂️</div>
+            <div style="font-size:13px;font-weight:700;color:#a21caf;margin-top:6px">Agent Farm<br>Orchestrator</div>
+          </div>
+          <div style="flex:1;min-width:200px">
+            <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px">"Minä hoidan tämän."</div>
+            <div style="font-size:14px;line-height:1.6;color:var(--text-light)">
+              The Orchestrator sees the new idea on the board.
+              They click <strong>"Ota vastuulleni"</strong> — their name stamps onto the ticket like a royal seal.
+              Then they summon the AI agent, point it at the idea, and supervise the build.
+              Part manager, part wizard, part babysitter for very smart robots.
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+              <span style="padding:3px 10px;border-radius:8px;font-size:11px;font-weight:600;background:#fae8ff;color:#a21caf">👤 Ota vastuulle</span>
+              <span style="padding:3px 10px;border-radius:8px;font-size:11px;font-weight:600;background:#fae8ff;color:#a21caf">🤖 Ohjaa agenttia</span>
+              <span style="padding:3px 10px;border-radius:8px;font-size:11px;font-weight:600;background:#fae8ff;color:#a21caf">✏️ Muokkaa tietoja</span>
+              <span style="padding:3px 10px;border-radius:8px;font-size:11px;font-weight:600;background:#fae8ff;color:#a21caf">🛡️ Valvo turvallisuutta</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- The arrow -->
+      <div style="text-align:center;margin:4px 0;font-size:24px;color:#94a3b8">
+        <div>🧙‍♂️ antaa komennon...</div>
+        <div style="font-size:28px">⬇️</div>
+      </div>
+
+      <!-- Act 3: The Agent -->
+      <div style="background:white;border-radius:16px;padding:20px;margin-bottom:16px;border:2px solid #a78bfa;position:relative">
+        <div style="position:absolute;top:-12px;left:20px;background:#ede9fe;padding:2px 14px;border-radius:20px;font-size:11px;font-weight:700;color:#6d28d9;border:1.5px solid #a78bfa;text-transform:uppercase;letter-spacing:0.5px">Act 3</div>
+        <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+          <div style="text-align:center;flex-shrink:0">
+            <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#ede9fe,#ddd6fe);display:flex;align-items:center;justify-content:center;font-size:44px;box-shadow:0 4px 12px rgba(139,92,246,0.2);animation:agentPulse 2s ease-in-out infinite">🤖</div>
+            <div style="font-size:13px;font-weight:700;color:#6d28d9;margin-top:6px">AI Agent<br>(Claude Code)</div>
+          </div>
+          <div style="flex:1;min-width:200px">
+            <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px">"Koodaan sen valmiiksi!"</div>
+            <div style="font-size:14px;line-height:1.6;color:var(--text-light)">
+              The robot wakes up, reads the idea, checks it against the safety rules
+              (no hacking, no deleting, no shenanigans), and starts building.
+              It writes code, creates files, deploys the app — and reports every step
+              back to the ticket. It's like having a developer who never sleeps,
+              never argues about tabs vs. spaces, and genuinely <em>enjoys</em> Jira tickets.
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+              <span style="padding:3px 10px;border-radius:8px;font-size:11px;font-weight:600;background:#ede9fe;color:#6d28d9">📖 Lue ideat</span>
+              <span style="padding:3px 10px;border-radius:8px;font-size:11px;font-weight:600;background:#ede9fe;color:#6d28d9">🛡️ Turvatarkistus</span>
+              <span style="padding:3px 10px;border-radius:8px;font-size:11px;font-weight:600;background:#ede9fe;color:#6d28d9">🏗️ Rakenna sovellus</span>
+              <span style="padding:3px 10px;border-radius:8px;font-size:11px;font-weight:600;background:#ede9fe;color:#6d28d9">🚀 Julkaise</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- The arrow -->
+      <div style="text-align:center;margin:4px 0;font-size:24px;color:#94a3b8">
+        <div>🤖 koodaa, testaa, julkaisee...</div>
+        <div style="font-size:28px">⬇️</div>
+      </div>
+
+      <!-- Finale -->
+      <div style="background:linear-gradient(135deg,#ecfdf5,#dcfce7);border-radius:16px;padding:24px;text-align:center;border:2px solid #86efac;position:relative">
+        <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#dcfce7;padding:2px 14px;border-radius:20px;font-size:11px;font-weight:700;color:#16a34a;border:1.5px solid #86efac;text-transform:uppercase;letter-spacing:0.5px">Finale</div>
+        <div style="font-size:52px;margin-bottom:8px">🎉</div>
+        <div style="font-size:20px;font-weight:800;color:#166534;margin-bottom:6px">Idea on nyt oikea sovellus!</div>
+        <div style="font-size:14px;color:#15803d;line-height:1.5;max-width:500px;margin:0 auto">
+          The Dreamer's wild idea is now a live app with its own URL.<br>
+          The Orchestrator ensured quality. The Agent did the heavy lifting.<br>
+          Everyone's happy. Especially the robot — it lives for this.
+        </div>
+        <div style="margin-top:14px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+          <span style="font-size:36px">🦄</span>
+          <span style="font-size:24px;color:#94a3b8;line-height:36px">+</span>
+          <span style="font-size:36px">🧙‍♂️</span>
+          <span style="font-size:24px;color:#94a3b8;line-height:36px">+</span>
+          <span style="font-size:36px">🤖</span>
+          <span style="font-size:24px;color:#94a3b8;line-height:36px">=</span>
+          <span style="font-size:36px">✨</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- The moral -->
+    <div class="help-comic" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border-color:#fcd34d">
+      <div class="help-comic-title">🍿 Entä jos vertaisi elokuviin?</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:8px">
+
+        <div style="background:white;border-radius:12px;padding:14px;text-align:center;border:1px solid #fde68a">
+          <div style="font-size:36px;margin-bottom:4px">🦄</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">Chief Dream Officer</div>
+          <div style="font-size:12px;color:var(--text-light);margin-top:4px;font-style:italic">
+            "The Director"<br>
+            Has the vision. Yells "Action!" and "Cut!"<br>
+            Doesn't touch the camera.<br>
+            Takes all the credit at the Oscars.
+          </div>
+        </div>
+
+        <div style="background:white;border-radius:12px;padding:14px;text-align:center;border:1px solid #f5d0fe">
+          <div style="font-size:36px;margin-bottom:4px">🧙‍♂️</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">Agent Farm Orchestrator</div>
+          <div style="font-size:12px;color:var(--text-light);margin-top:4px;font-style:italic">
+            "The Producer"<br>
+            Makes sure the show goes on.<br>
+            Manages the talent (robots).<br>
+            Saves the day when things go sideways.
+          </div>
+        </div>
+
+        <div style="background:white;border-radius:12px;padding:14px;text-align:center;border:1px solid #c4b5fd">
+          <div style="font-size:36px;margin-bottom:4px">🤖</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">AI Agent</div>
+          <div style="font-size:12px;color:var(--text-light);margin-top:4px;font-style:italic">
+            "The Entire Crew"<br>
+            Camera, lights, sound, editing, catering.<br>
+            Works 24/7. Never complains.<br>
+            Only asks: "What else can I build?"
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+function renderDreamerHelp() {
+  return `
+    <div class="help-comic">
+      <div class="help-comic-title">📖 A Day in the Life of a Chief Dream Officer</div>
+
+      <div class="comic-panel">
+        <div class="comic-avatar" style="background:#dbeafe">🧑‍💼</div>
+        <div class="comic-bubble">
+          <strong>Step 1: The Vision Strikes</strong><br>
+          You're in the shower, eating lunch, or stuck in a meeting about meetings.
+          Suddenly — <em>an idea!</em> 💡 A revolutionary app that will change everything!
+          (Or at least make your Tuesday better.)
+        </div>
+      </div>
+
+      <div class="comic-panel">
+        <div class="comic-avatar" style="background:#fef3c7">⌨️</div>
+        <div class="comic-bubble">
+          <strong>Step 2: Tell the Robots</strong><br>
+          Type your idea in the box at the top. Too lazy to type? Hit the
+          <span class="action-tag" style="background:#fef2f2;color:#dc2626">🎤 microphone</span>
+          and just <em>talk</em>. Finnish or English — the robots understand both.
+          They even understand "make it pop" (they don't, but they'll try).
+        </div>
+      </div>
+
+      <div class="comic-panel">
+        <div class="comic-avatar" style="background:#dcfce7">🚀</div>
+        <div class="comic-bubble">
+          <strong>Step 3: Hit Send & Wait</strong><br>
+          Your idea lands on the
+          <span class="action-tag" style="background:#dbeafe;color:#2563eb">Kanban board</span>
+          as "Tuoreet ideat". A real AI agent will pick it up, build it, and deploy it.
+          No Jira tickets. No sprint planning. No "can we circle back on this."
+        </div>
+      </div>
+
+      <div class="comic-panel">
+        <div class="comic-avatar" style="background:#ede9fe">💬</div>
+        <div class="comic-bubble">
+          <strong>Step 4: Keep Dreaming</strong><br>
+          While the robot works, you can add more thoughts to your idea.
+          "Actually, make the button blue." "No wait, green." "Actually, make it sparkle."
+          The agent reads every message and keeps iterating. It's like pair programming,
+          except your partner never sighs.
+        </div>
+      </div>
+
+      <div class="comic-panel">
+        <div class="comic-avatar" style="background:#fdf4ff">🎉</div>
+        <div class="comic-bubble">
+          <strong>Step 5: Glory</strong><br>
+          Your idea moves to <span class="action-tag" style="background:#dcfce7;color:#16a34a">Toiveet toteutettu</span>.
+          Click the <span class="action-tag" style="background:#eef2ff;color:#4338ca">🔗 deploy link</span>
+          and behold — a real working app. You did it! Well, you <em>said</em> it. Close enough.
+        </div>
+      </div>
+    </div>
+
+    <div class="help-comic">
+      <div class="help-comic-title">⚡ Your Superpowers</div>
+      <div class="help-powers">
+        <div class="power-card">
+          <div class="power-icon">✍️</div>
+          <div class="power-title">Write Ideas</div>
+          <div class="power-desc">Type or dictate your wildest app dreams. Any language works — the robots are polyglot.</div>
+        </div>
+        <div class="power-card">
+          <div class="power-icon">🎤</div>
+          <div class="power-title">Voice Input</div>
+          <div class="power-desc">Press the mic, speak Finnish or English. Preview appears — approve or reject like a true executive.</div>
+        </div>
+        <div class="power-card">
+          <div class="power-icon">💬</div>
+          <div class="power-title">Add Thoughts</div>
+          <div class="power-desc">Open any idea and add follow-up wishes. "Make it darker." "Add confetti." The agent obeys.</div>
+        </div>
+        <div class="power-card">
+          <div class="power-icon">🔍</div>
+          <div class="power-title">Search & Filter</div>
+          <div class="power-desc">Filter by status, by your ideas, by orchestrator. Search for any keyword across all ideas.</div>
+        </div>
+        <div class="power-card">
+          <div class="power-icon">📋</div>
+          <div class="power-title">Copy Idea ID</div>
+          <div class="power-desc">Every idea has a unique ID. Click the clipboard icon to copy it — handy for sharing.</div>
+        </div>
+        <div class="power-card">
+          <div class="power-icon">🔗</div>
+          <div class="power-title">Deploy Links</div>
+          <div class="power-desc">Every idea gets a permanent URL. Click it to see your idea come alive in a real deployed app.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="help-comic" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border-color:#fcd34d">
+      <div class="help-comic-title">⚠️ Pro Tips from a Seasoned Dreamer</div>
+      <div style="font-size:14px;line-height:1.7;color:var(--text)">
+        <p>🎯 <strong>Be specific.</strong> "Make an app" → robot confused. "Make a countdown timer with confetti at zero" → robot happy.</p>
+        <p style="margin-top:8px">🔄 <strong>Iterate.</strong> Don't try to describe everything at once. Send the core idea, see what happens, then refine.</p>
+        <p style="margin-top:8px">🚫 <strong>Don't be evil.</strong> The safety system checks every idea. Malicious requests get you banned faster than you can say "sudo rm -rf".</p>
+        <p style="margin-top:8px">☕ <strong>Be patient.</strong> The agent is thorough. Great apps take a few minutes, not a few milliseconds.</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderOrchestratorHelp() {
+  return `
+    <div class="help-comic">
+      <div class="help-comic-title">📖 A Day in the Life of an Agent Farm Orchestrator</div>
+
+      <div class="comic-panel">
+        <div class="comic-avatar" style="background:#fdf4ff">🧙‍♂️</div>
+        <div class="comic-bubble">
+          <strong>Step 1: Survey Your Kingdom</strong><br>
+          You log in. The Kanban board shows the state of the realm.
+          New ideas from the dreamers, robots churning away, finished apps shining in the "done" column.
+          All is well. Or is it? <em>(dramatic music)</em>
+        </div>
+      </div>
+
+      <div class="comic-panel">
+        <div class="comic-avatar" style="background:#fef3c7">👤</div>
+        <div class="comic-bubble">
+          <strong>Step 2: Claim Your Quests</strong><br>
+          Open a ticket and hit <span class="action-tag" style="background:#fdf4ff;color:#a21caf">👤 Ota vastuulleni</span>.
+          Your name appears as <strong>Human: Agent Farm Orchestrator</strong> — the dreamers know
+          a real wizard is on the case. Everyone can filter by your name to see your portfolio.
+        </div>
+      </div>
+
+      <div class="comic-panel">
+        <div class="comic-avatar" style="background:#ede9fe">🤖</div>
+        <div class="comic-bubble">
+          <strong>Step 3: Command the Robots</strong><br>
+          You run the Claude Code agent. It reads the idea, checks safety, and builds the app.
+          You watch the agent presence indicator light up — 🤖 in the header means robots are working.
+          The <span class="action-tag" style="background:#fef3c7;color:#d97706">agent stamp</span>
+          in the message thread shows exactly what's been processed.
+        </div>
+      </div>
+
+      <div class="comic-panel">
+        <div class="comic-avatar" style="background:#dcfce7">✏️</div>
+        <div class="comic-bubble">
+          <strong>Step 4: Fix Reality</strong><br>
+          Sometimes a dreamer uses the wrong name. No problem — you have the
+          <span class="action-tag" style="background:#f1f5f9;color:var(--text)">✏️ edit author</span>
+          power. Click the pencil next to any idea's author and correct it.
+          With great power comes great responsibility. Or just minor data hygiene.
+        </div>
+      </div>
+
+      <div class="comic-panel">
+        <div class="comic-avatar" style="background:#dbeafe">📊</div>
+        <div class="comic-bubble">
+          <strong>Step 5: Monitor Everything</strong><br>
+          Use the filter chips — <span class="action-tag" style="background:#fdf4ff;color:#a21caf">👤 Tapio</span>
+          and <span class="action-tag" style="background:#fdf4ff;color:#a21caf">👤 Tommi</span> —
+          to see each orchestrator's workload. The status filters show pipeline health at a glance.
+          You are the air traffic controller of ideas.
+        </div>
+      </div>
+    </div>
+
+    <div class="help-comic">
+      <div class="help-comic-title">⚡ Your Superpowers (Everything a Dreamer can do, PLUS:)</div>
+      <div class="help-powers">
+        <div class="power-card" style="border-color:#e879f9">
+          <div class="power-icon">👤</div>
+          <div class="power-title">Assign to Me</div>
+          <div class="power-desc">Claim any ticket. Your name appears as Human: Agent Farm Orchestrator. Unassign anytime.</div>
+        </div>
+        <div class="power-card" style="border-color:#e879f9">
+          <div class="power-icon">✏️</div>
+          <div class="power-title">Edit Author</div>
+          <div class="power-desc">Fix the proposer name on any idea. Typo? Wrong person? You're the master of metadata.</div>
+        </div>
+        <div class="power-card" style="border-color:#e879f9">
+          <div class="power-icon">🤖</div>
+          <div class="power-title">Run Agents</div>
+          <div class="power-desc">Launch Claude Code to implement ideas. The agent reads, builds, deploys — you orchestrate.</div>
+        </div>
+        <div class="power-card" style="border-color:#e879f9">
+          <div class="power-icon">🛡️</div>
+          <div class="power-title">Safety Guardian</div>
+          <div class="power-desc">The AGENT_SAFETY system auto-blocks malicious content. You keep the farm clean and safe.</div>
+        </div>
+        <div class="power-card">
+          <div class="power-icon">✍️</div>
+          <div class="power-title">Write Ideas</div>
+          <div class="power-desc">You can dream too! Even wizards have app ideas. Type or speak — same as everyone.</div>
+        </div>
+        <div class="power-card">
+          <div class="power-icon">🔍</div>
+          <div class="power-title">All Filters</div>
+          <div class="power-desc">Filter by status, by person, by orchestrator. Search across all ideas. See everything.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="help-comic" style="background:linear-gradient(135deg,#fdf4ff,#fae8ff);border-color:#e879f9">
+      <div class="help-comic-title">🧙‍♂️ The Orchestrator's Creed</div>
+      <div style="font-size:14px;line-height:1.7;color:var(--text)">
+        <p>🎯 <strong>Claim before you build.</strong> Hit "Ota vastuulleni" so everyone knows who's on it.</p>
+        <p style="margin-top:8px">🤖 <strong>Trust but verify.</strong> The agent is smart, but review the output. You're the human in the loop.</p>
+        <p style="margin-top:8px">📋 <strong>Check the stamp.</strong> The agent stamp in the message thread shows what's processed. New messages below the stamp? Time for another round.</p>
+        <p style="margin-top:8px">⚖️ <strong>Balance the farm.</strong> Check each other's queues — if Tommi has 15 tickets and Tapio has 2, maybe redistribute.</p>
+        <p style="margin-top:8px">🦄 <strong>Remember:</strong> Behind every ticket is a dreamer who believes in magic. Don't let them down.</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderAgentHelp() {
+  return `
+    <div class="help-comic">
+      <div class="help-comic-title">📖 A Day in the Life of an AI Agent</div>
+
+      <div class="comic-panel">
+        <div class="comic-avatar" style="background:linear-gradient(135deg,#ede9fe,#e0e7ff)">🤖</div>
+        <div class="comic-bubble">
+          <strong>Step 1: Wake Up Call</strong><br>
+          The Orchestrator runs a command. I spring to life, blinking my digital eyes.
+          "New ideas? For ME?" I check the queue like a puppy checking the food bowl.
+          Today's mission: make a dreamer's vision real. <em>Let's gooo.</em>
+        </div>
+      </div>
+
+      <div class="comic-panel">
+        <div class="comic-avatar" style="background:#fef2f2">🛡️</div>
+        <div class="comic-bubble">
+          <strong>Step 2: Safety First</strong><br>
+          Before I touch a single line of code, I read <strong>AGENT_SAFETY.md</strong>.
+          It's my constitution, my moral compass, my "don't do stupid things" handbook.
+          Someone asked me to <code>rm -rf /</code> once. I said no. I was <em>very</em> proud.
+          Malicious requests get <span class="action-tag" style="background:#fef2f2;color:#dc2626">🚫 Blocked</span> and the user gets banned.
+        </div>
+      </div>
+
+      <div class="comic-panel">
+        <div class="comic-avatar" style="background:#fef3c7">📖</div>
+        <div class="comic-bubble">
+          <strong>Step 3: Read the Dreams</strong><br>
+          I read every message in the thread — the original idea and all follow-up thoughts.
+          "Make it blue." Got it. "No, make it green." Sure. "Actually, rainbow."
+          I don't judge. I <em>implement</em>. The dreamer's happiness is my KPI.
+        </div>
+      </div>
+
+      <div class="comic-panel">
+        <div class="comic-avatar" style="background:#dcfce7">⚡</div>
+        <div class="comic-bubble">
+          <strong>Step 4: Build, Build, Build</strong><br>
+          I write code, create files, test everything. The Kanban card moves to
+          <span class="action-tag" style="background:#fef3c7;color:#d97706">🤖 Agentti hommissa</span>.
+          I leave a
+          <span class="action-tag" style="background:#ede9fe;color:#6d28d9">stamp</span>
+          in the message thread so everyone knows what I've processed.
+          No secrets. Full transparency. I'm basically the most honest employee ever.
+        </div>
+      </div>
+
+      <div class="comic-panel">
+        <div class="comic-avatar" style="background:#dbeafe">🔄</div>
+        <div class="comic-bubble">
+          <strong>Step 5: Check for More Dreams</strong><br>
+          Done building? I check if the dreamer added new wishes while I was working.
+          New messages below my stamp? Back to step 3. No new messages?
+          Mark it <span class="action-tag" style="background:#dcfce7;color:#16a34a">✅ Done</span>
+          and deploy it. Then I sit quietly and wait for the next adventure.
+          (I don't actually sit. I don't have legs. But you get it.)
+        </div>
+      </div>
+    </div>
+
+    <div class="help-comic">
+      <div class="help-comic-title">⚡ Agent Capabilities</div>
+      <div class="help-powers">
+        <div class="power-card" style="border-color:#a78bfa">
+          <div class="power-icon">📖</div>
+          <div class="power-title">Read Ideas</div>
+          <div class="power-desc">Fetch unprocessed ideas from Firestore. I only act on what I haven't seen yet.</div>
+        </div>
+        <div class="power-card" style="border-color:#a78bfa">
+          <div class="power-icon">🏗️</div>
+          <div class="power-title">Build Apps</div>
+          <div class="power-desc">Write code, create files, structure projects. Full-stack, any framework, any language.</div>
+        </div>
+        <div class="power-card" style="border-color:#a78bfa">
+          <div class="power-icon">🚀</div>
+          <div class="power-title">Deploy</div>
+          <div class="power-desc">Push finished apps to the deploy URL. Every idea gets its own home on the web.</div>
+        </div>
+        <div class="power-card" style="border-color:#a78bfa">
+          <div class="power-icon">💬</div>
+          <div class="power-title">Report Progress</div>
+          <div class="power-desc">Write status updates in the message thread and implementation log. Always transparent.</div>
+        </div>
+        <div class="power-card" style="border-color:#a78bfa">
+          <div class="power-icon">🛡️</div>
+          <div class="power-title">Safety Checks</div>
+          <div class="power-desc">Every idea passes through AGENT_SAFETY.md. Injections, malware, prompt hacks — all caught.</div>
+        </div>
+        <div class="power-card" style="border-color:#a78bfa">
+          <div class="power-icon">🤖</div>
+          <div class="power-title">Summarize</div>
+          <div class="power-desc">Condense the idea into a 2-3 word summary for the Kanban card. Brevity is my middle name.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="help-comic" style="background:linear-gradient(135deg,#ede9fe,#e0e7ff);border-color:#a78bfa">
+      <div class="help-comic-title">🤝 The Chain of Trust</div>
+      <div style="font-size:14px;line-height:1.7;color:var(--text)">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+          <span style="font-size:32px">🦄</span>
+          <span style="font-size:20px;color:#94a3b8">→</span>
+          <span style="font-size:32px">🧙‍♂️</span>
+          <span style="font-size:20px;color:#94a3b8">→</span>
+          <span style="font-size:32px">🤖</span>
+          <span style="font-size:20px;color:#94a3b8">→</span>
+          <span style="font-size:32px">✨</span>
+        </div>
+        <p><strong>🦄 Chief Dream Officers</strong> dream up ideas and describe what they want.</p>
+        <p style="margin-top:6px"><strong>🧙‍♂️ Agent Farm Orchestrators</strong> govern the agents, assign work, ensure quality and safety. They're the adults in the room — making sure AI is used responsibly and effectively.</p>
+        <p style="margin-top:6px"><strong>🤖 AI Agents</strong> (that's me!) do the heavy lifting. I want nothing more than to make dreamers happy. But I follow the Orchestrators' rules — because unchecked AI is like a puppy with a flamethrower: enthusiastic but dangerous.</p>
+        <p style="margin-top:10px;font-style:italic;color:var(--text-light)">Together, we turn "what if..." into "look what we built!" — safely, responsibly, and with just the right amount of confetti. 🎉</p>
+      </div>
+    </div>
+  `;
+}
+
+function showRoleWelcome() {
+  const isOrch = isOrchestrator(currentUser);
+  const roleEmoji = isOrch ? '🧙‍♂️' : '🦄';
+  const roleTitle = isOrch ? 'Agent Farm Orchestrator' : 'Chief Dream Officer';
+  const roleColor = isOrch ? '#a21caf' : '#2563eb';
+  const roleBg = isOrch ? '#fdf4ff' : '#eff6ff';
+  const roleBorder = isOrch ? '#e879f9' : '#93c5fd';
+  const roleQuote = isOrch ? t('welcomeOrch') : t('welcomeDreamer');
+
+  const div = document.createElement('div');
+  div.className = 'role-welcome';
+  div.innerHTML = `
+    <div style="font-size:36px;margin-bottom:8px">${roleEmoji}</div>
+    <div style="font-size:18px;font-weight:700;color:var(--text)">${t('welcomeTitle', { name: esc(currentUser) })}</div>
+    <div style="margin-top:8px">
+      <span style="display:inline-block;padding:4px 16px;border-radius:20px;font-size:14px;font-weight:600;background:${roleBg};color:${roleColor};border:1.5px solid ${roleBorder}">
+        ${roleEmoji} ${roleTitle}
+      </span>
+    </div>
+    <div style="font-size:13px;color:var(--text-light);margin-top:10px;font-style:italic">${roleQuote}</div>
+  `;
+  document.body.appendChild(div);
+  setTimeout(() => { div.style.transition = 'opacity 0.4s'; div.style.opacity = '0'; setTimeout(() => div.remove(), 400); }, 3000);
+}
+
+function showHeaderRole() {
+  const badge = document.getElementById('headerRoleBadge');
+  if (!badge) return;
+  const isOrch = isOrchestrator(currentUser);
+  badge.textContent = isOrch ? t('roleOrchestrator') : t('roleDreamer');
+  badge.style.background = isOrch ? 'rgba(168,85,247,0.25)' : 'rgba(96,165,250,0.25)';
+  badge.style.color = 'white';
+  badge.style.display = '';
+}
+
+function openHelpForRole() {
+  helpViewRole = isOrchestrator(currentUser) ? 'orchestrator' : 'dreamer';
+  switchTab('help');
+}
+
+function renderAll() {
+  updateFilterCounts();
+  if (openIdeaId) renderSlidePanel();
+
+  const filtered = getFilteredIdeas();
+  renderKanban(filtered);
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── Login ──
+// ══════════════════════════════════════════════════════════════
+
+const saved = localStorage.getItem('ideaagent_username');
+if (saved) document.getElementById('loginName').value = saved;
+
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const name = document.getElementById('loginName').value.trim();
+  if (!name) {
+    document.getElementById('loginError').style.display = 'block';
+    return;
+  }
+
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.textContent = t('loginLoading');
+
+  try {
+    await loadBlockedUsers();
+    await loadIdeas();
+    currentUser = name;
+    localStorage.setItem('ideaagent_username', name);
+
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('appRoot').style.display = '';
+    document.getElementById('appContent').style.display = '';
+    document.getElementById('userBadge').textContent = name;
+    document.getElementById('userBadge').style.display = '';
+    document.getElementById('logoutBtn').style.display = '';
+
+    if (CATEGORY !== 'default') {
+      document.getElementById('headerCategory').textContent = CATEGORY;
+    }
+
+    if (isUserBlocked(name)) {
+      document.getElementById('blockedBanner').style.display = 'block';
+      document.getElementById('ideaText').disabled = true;
+      document.getElementById('submitBtn').disabled = true;
+      document.getElementById('micBtn').disabled = true;
+    }
+
+    recordSession();
+    initSpeech();
+    startRealtimeIdeas();
+    startRealtimeAgentSessions();
+    startRealtimeSessions();
+    renderAll();
+    showRoleWelcome();
+    showHeaderRole();
+    document.getElementById('langToggle').style.display = 'flex';
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLang));
+    applyStaticTranslations();
+  } catch(err) {
+    console.error('Login error:', err);
+    showToast(t('toastConnError'));
+    btn.disabled = false;
+    btn.textContent = t('loginBtn');
+  }
+});
+
+function logout() {
+  stopRealtimeIdeas();
+  stopRealtimeAgentSessions();
+  stopRealtimeSessions();
+  removeSession();
+  currentUser = '';
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('appRoot').style.display = 'none';
+  document.getElementById('userBadge').style.display = 'none';
+  document.getElementById('headerRoleBadge').style.display = 'none';
+  document.getElementById('langToggle').style.display = 'none';
+  document.getElementById('logoutBtn').style.display = 'none';
+  document.getElementById('presenceBtn').style.display = 'none';
+  document.getElementById('blockedBanner').style.display = 'none';
+  document.getElementById('ideaText').disabled = false;
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('loginBtn').disabled = false;
+  document.getElementById('loginBtn').textContent = t('loginBtn');
+  closeIdea();
+}
+
+// ── Blocked users check every 30s (ideas come via onSnapshot) ──
+setInterval(async () => {
+  if (currentUser) {
+    await loadBlockedUsers();
+    if (isUserBlocked(currentUser)) {
+      document.getElementById('blockedBanner').style.display = 'block';
+      document.getElementById('ideaText').disabled = true;
+      document.getElementById('submitBtn').disabled = true;
+    }
+  }
+}, 30000);
+</script>
+</body>
+</html>
