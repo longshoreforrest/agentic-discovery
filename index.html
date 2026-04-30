@@ -1027,6 +1027,14 @@ body {
             <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:12px" id="chartMsgsTitle">💬 Viestit per tiketti (top 10)</div>
             <div id="chartMsgs"></div>
           </div>
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:16px">
+            <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:12px" id="chartCodeLinesTitle">💻 Koodirivit per sovellus (top 10)</div>
+            <div id="chartCodeLines"></div>
+          </div>
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:16px">
+            <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:12px" id="chartCodeCityTitle">🏗️ Koodirivit per toimipiste</div>
+            <div id="chartCodeCity"></div>
+          </div>
         </div>
 
         <!-- Idea table -->
@@ -2969,6 +2977,65 @@ function renderSlidePanel() {
 // ══════════════════════════════════════════════════════════════
 // ── Analytics ──
 
+const codeLineStats = {
+  '20260430_1234_225': 653,
+  'Helsinki_20260429_0623_124': 646,
+  'Helsinki_20260430_1154_668': 467,
+  'Helsinki_20260430_1304_544': 1199,
+  'Helsinki_20260430_1314_371': 1609,
+  'Helsinki_20260430_1314_766': 1420,
+  'Helsinki_20260430_1316_796': 1634,
+  'Helsinki_20260430_1317_686': 1588,
+  'Helsinki_20260430_1317_773': 642,
+  'Helsinki_20260430_1320_905': 1083,
+  'Helsinki_20260430_1320_919': 907,
+  'Helsinki_20260430_1323_356': 1199,
+  'Helsinki_20260430_1324_528': 1142,
+  'Helsinki_20260430_1325_787': 1100,
+  'Helsinki_20260430_1326_176': 989,
+  'Helsinki_20260430_1331_643': 1700,
+  'Helsinki_20260430_1336_527': 1014,
+  'Helsinki_food': 4624,
+  'Joensuu_asiakas_projektireferenssit': 3030,
+  'Joensuu_asiakasreferenssit': 2763,
+  'Joensuu_biljardipöytä': 3552,
+  'Joensuu_myynnistä_projektiin': 1892,
+  'Joensuu_neukkarit': 2488,
+  'Joensuu_site_tapahtumat': 3446,
+  'Joensuu_toimiston_laskut': 3111,
+  'Jyväskylä': 0,
+  'Jyväskylä_desktoptester': 2839,
+  'Jyväskylä_events': 2697,
+  'Jyväskylä_kukatuleetoimistolle': 2793,
+  'Jyväskylä_security_scan': 2291,
+  'Kuopio_haastattelija': 6742,
+  'Kuopio_lounas': 2519,
+  'Kuopio_pienkehittäjä': 5772,
+  'Kuopio_testausagentit': 3886,
+  'Multi_Sport_Training_Optimizer_20260430_1320_935': 1044,
+  'Oulu_kulttuuripaakaupunki': 2183,
+  'Oulu_personal_trainer': 218851,
+  'Personal_Assistant_20260430_1321_790': 1268,
+  'Premium_Slide_Generator_20260430_1311_702': 1225,
+  'Pricing_Calculator_20260430_1257_449': 683,
+  'Running_Route_Planner_20260430_1312_771': 930,
+  'Seinajoki_ruokabotti': 4188,
+  'Seinajoki_tuntikirjanpito': 2022,
+  'Seinäjoki_ruokabotti': 0,
+  'Tampere_golfapuri': 4145,
+  'Tampere_muistuttaja': 4359,
+  'Tampere_myyntitavoittet': 4200,
+  'Tampere_serttiapuri': 2852,
+  'idea_20260430_1311_577': 858,
+  'idea_20260430_1321_299': 1311,
+  'idea_20260430_1331_960': 1671
+};
+
+function getCodeLines(idea) {
+  const dir = idea.gitDir || defaultGitDir(idea.ideaId);
+  return codeLineStats[dir] || 0;
+}
+
 let analyticsCityFilter = 'all';
 
 function getCityFromIdea(idea) {
@@ -2988,10 +3055,12 @@ function renderAnalytics() {
   const totalMsgs = src.reduce((s, i) => s + (i.messages || []).length, 0);
   const totalAuthors = new Set(src.map(i => i.author)).size;
   const totalCities = Object.keys(cities).length;
+  const totalCodeLines = src.reduce((s, i) => s + getCodeLines(i), 0);
 
   document.getElementById('analyticsKpis').innerHTML = [
     { label: currentLang === 'fi' ? 'Ideat' : 'Ideas', value: totalIdeas, color: '#3b82f6', icon: '💡' },
     { label: currentLang === 'fi' ? 'Toteutettu' : 'Completed', value: totalDone, color: '#22c55e', icon: '✅' },
+    { label: currentLang === 'fi' ? 'Koodirivejä' : 'Code lines', value: totalCodeLines.toLocaleString(), color: '#0ea5e9', icon: '💻' },
     { label: currentLang === 'fi' ? 'Viestejä' : 'Messages', value: totalMsgs, color: '#f59e0b', icon: '💬' },
     { label: currentLang === 'fi' ? 'Ideoijia' : 'Contributors', value: totalAuthors, color: '#8b5cf6', icon: '👤' },
     { label: currentLang === 'fi' ? 'Toimipisteet' : 'Offices', value: totalCities, color: '#ec4899', icon: '📍' },
@@ -3062,6 +3131,35 @@ function renderAnalytics() {
       </div>`;
     }).join('');
 
+  // Code lines per app (top 10)
+  const codeData = src.map(i => ({ label: (i.agentSummary || i.text || i.ideaId).substring(0, 30), lines: getCodeLines(i) }))
+    .filter(d => d.lines > 0).sort((a, b) => b.lines - a.lines).slice(0, 10);
+  const maxCodeLines = Math.max(...codeData.map(d => d.lines), 1);
+  document.getElementById('chartCodeLines').innerHTML = codeData.length === 0
+    ? `<div style="color:#94a3b8;font-size:13px;padding:8px">${currentLang === 'fi' ? 'Ei dataa' : 'No data'}</div>`
+    : codeData.map(d =>
+      `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-size:11px;color:#64748b;width:120px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(d.label)}">${esc(d.label)}</span>
+        <div style="flex:1;height:22px;background:#f1f5f9;border-radius:6px;overflow:hidden">
+          <div style="height:100%;width:${(d.lines/maxCodeLines)*100}%;background:#0ea5e9;border-radius:6px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:11px;font-weight:700;color:white;min-width:22px">${d.lines.toLocaleString()}</div>
+        </div>
+      </div>`).join('');
+
+  // Code lines per city
+  const codeCityData = {};
+  src.forEach(i => { const c = getCityFromIdea(i); codeCityData[c] = (codeCityData[c] || 0) + getCodeLines(i); });
+  const codeCityEntries = Object.entries(codeCityData).filter(([,v]) => v > 0).sort((a,b) => b[1] - a[1]);
+  const maxCodeCity = Math.max(...codeCityEntries.map(e => e[1]), 1);
+  document.getElementById('chartCodeCity').innerHTML = codeCityEntries.length === 0
+    ? `<div style="color:#94a3b8;font-size:13px;padding:8px">${currentLang === 'fi' ? 'Ei dataa' : 'No data'}</div>`
+    : codeCityEntries.map(([c, v], i) =>
+      `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-size:12px;color:#64748b;width:80px;text-align:right">${c}</span>
+        <div style="flex:1;height:24px;background:#f1f5f9;border-radius:6px;overflow:hidden">
+          <div style="height:100%;width:${(v/maxCodeCity)*100}%;background:${cityColors[i % cityColors.length]};border-radius:6px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:11px;font-weight:700;color:white;min-width:24px">${v.toLocaleString()}</div>
+        </div>
+      </div>`).join('');
+
   // Table
   const rows = src.sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||'')).map(i => {
     const sc = { new: '#3b82f6', 'in-progress': '#f59e0b', done: '#22c55e', blocked: '#ef4444' }[i.status] || '#94a3b8';
@@ -3071,6 +3169,7 @@ function renderAnalytics() {
     const agentMsgs = (i.messages || []).filter(m => m.role === 'agent').length;
     const city = getCityFromIdea(i);
     const preview = (i.agentSummary || i.text || '').substring(0, 50);
+    const lines = getCodeLines(i);
     return `<tr style="border-bottom:1px solid #f1f5f9">
       <td style="padding:6px 8px;font-size:12px;color:#64748b;white-space:nowrap">${city}</td>
       <td style="padding:6px 8px;font-size:12px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(i.author)}</td>
@@ -3078,6 +3177,7 @@ function renderAnalytics() {
       <td style="padding:6px 8px"><span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;background:${sc}20;color:${sc}">${sl}</span></td>
       <td style="padding:6px 8px;font-size:12px;text-align:center">${userMsgs}</td>
       <td style="padding:6px 8px;font-size:12px;text-align:center">${agentMsgs}</td>
+      <td style="padding:6px 8px;font-size:12px;text-align:right;color:${lines > 0 ? '#0ea5e9' : '#cbd5e1'};font-weight:${lines > 0 ? '600' : '400'}">${lines > 0 ? lines.toLocaleString() : '—'}</td>
       <td style="padding:6px 8px;font-size:12px;color:#64748b;white-space:nowrap">${formatDateTime(i.createdAt)}</td>
     </tr>`;
   }).join('');
@@ -3091,6 +3191,7 @@ function renderAnalytics() {
       <th style="${thStyle}">Status</th>
       <th style="${thStyle};text-align:center">👤</th>
       <th style="${thStyle};text-align:center">🤖</th>
+      <th style="${thStyle};text-align:right">💻</th>
       <th style="${thStyle}">${currentLang === 'fi' ? 'Luotu' : 'Created'}</th>
     </tr></thead>
     <tbody>${rows}</tbody>
