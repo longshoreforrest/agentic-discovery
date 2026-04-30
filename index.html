@@ -683,9 +683,9 @@ body {
       <input type="text" id="loginName" placeholder="Nimesi: Etunimi Sukunimi" autocomplete="name" required>
       <button type="submit" id="loginBtn">Aloita</button>
       <div class="login-error" id="loginError">Anna nimesi: Etunimi Sukunimi.</div>
-      <div style="margin:12px 0 0;display:flex;align-items:center;gap:6px;font-size:11px;color:#94a3b8;line-height:1.4;position:relative;justify-content:center">
-        <input type="checkbox" id="aupCheck" checked style="accent-color:#4f46e5;flex-shrink:0;cursor:pointer">
-        <label for="aupCheck" style="cursor:pointer">
+      <div style="margin:12px 0 0;font-size:11px;color:#94a3b8;line-height:1.4;position:relative;text-align:center">
+        <label for="aupCheck" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="checkbox" id="aupCheck" checked style="accent-color:#4f46e5;flex-shrink:0;cursor:pointer">
           <span id="aupLabel">Hyväksyn käyttöehdot</span>
           <span id="aupToggle" style="color:#818cf8;font-weight:600;cursor:pointer;text-decoration:underline" onclick="event.preventDefault();document.getElementById('aupPopup').style.display=document.getElementById('aupPopup').style.display==='none'?'block':'none'">(lue)</span>
         </label>
@@ -702,7 +702,7 @@ body {
             </ul>
             <p style="color:#64748b;font-style:italic">Rikkomukset johtavat käyttäjätilin estämiseen.</p>
           </div>
-          <button onclick="document.getElementById('aupPopup').style.display='none'" style="margin-top:8px;padding:4px 14px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit">Sulje</button>
+          <button type="button" onclick="document.getElementById('aupPopup').style.display='none'" style="margin-top:8px;padding:4px 14px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit">Sulje</button>
         </div>
       </div>
     </form>
@@ -2653,7 +2653,7 @@ function renderKanbanCard(idea) {
     <div class="kanban-card-footer">
       <span>${formatDateTime(idea.createdAt)}</span>
       ${msgBadge ? '<span>' + msgBadge + '</span>' : ''}
-      <a href="${deployUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#6366f1;text-decoration:none;margin-left:auto;display:inline-flex;align-items:center;gap:2px" title="${deployUrl}">${t('openLink')}</a>
+      ${isOrchestrator(currentUser) ? `<a href="${deployUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#6366f1;text-decoration:none;margin-left:auto;display:inline-flex;align-items:center;gap:2px" title="${deployUrl}">${t('openLink')}</a>` : ''}
     </div>
   </div>`;
 }
@@ -2855,7 +2855,7 @@ function renderIdeaDetail(idea) {
       <button onclick="event.stopPropagation();editGitDir('${idea.ideaId}')" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:white;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;color:var(--text-light);cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-light)'">${currentLang === 'fi' ? '✏️ Muokkaa' : '✏️ Edit'}</button>
     </div>` : ''}
     <div style="margin:8px 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-      <a href="${DEPLOY_BASE_URL}/${idea.gitDir || defaultGitDir(idea.ideaId)}/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;font-size:13px;color:#4338ca;text-decoration:none;font-weight:500">🔗 ${DEPLOY_BASE_URL}/${idea.gitDir || defaultGitDir(idea.ideaId)}/ ↗</a>
+      ${isOrchestrator(currentUser) ? `<a href="${DEPLOY_BASE_URL}/${idea.gitDir || defaultGitDir(idea.ideaId)}/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;font-size:13px;color:#4338ca;text-decoration:none;font-weight:500">🔗 ${DEPLOY_BASE_URL}/${idea.gitDir || defaultGitDir(idea.ideaId)}/ ↗</a>` : ''}
       ${idea.appUrl ? `<a href="${esc(idea.appUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#ecfdf5;border:1px solid #86efac;border-radius:8px;font-size:13px;color:#166534;text-decoration:none;font-weight:500">${t('appLink')}</a>` : ''}
       ${isOrchestrator(currentUser) ? `<button onclick="event.stopPropagation();editAppUrl('${idea.ideaId}')" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:white;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;color:var(--text-light);cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-light)'">${idea.appUrl ? '✏️' : '➕'} ${currentLang === 'fi' ? 'Muokkaa URL' : 'Edit URL'}</button>` : ''}
       <button onclick="event.stopPropagation();closeIdea();inviteToIdea('${idea.ideaId}')" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:white;border:1.5px solid #fbbf24;border-radius:8px;font-size:12px;font-weight:600;color:#92400e;cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.background='#fffbeb'" onmouseout="this.style.background='white'">💌 ${currentLang === 'fi' ? 'Kutsu kaveri' : 'Invite friend'}</button>
