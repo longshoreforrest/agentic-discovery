@@ -777,6 +777,7 @@ body {
       <button class="main-tab" data-tab="help" onclick="switchTab('help')">🦸 Käyttöopas</button>
       <button class="main-tab" data-tab="slides" onclick="switchTab('slides')">🎬 Slides</button>
       <button class="main-tab" data-tab="invite" onclick="switchTab('invite')">💌 Kutsu kaveri</button>
+      <button class="main-tab" data-tab="apps" onclick="switchTab('apps')" id="tabAppsBtn">🚀 Kaikki Sovellusaihiot</button>
       <button class="main-tab" data-tab="docs" onclick="switchTab('docs')">📖 Dokumentaatio</button>
     </div>
 
@@ -906,6 +907,89 @@ body {
         </div>
       </div>
     </div><!-- /tabInvite -->
+
+    <!-- Tab: Kaikki Sovellusaihiot -->
+    <div id="tabApps" style="display:none">
+      <div class="docs-section">
+        <div style="margin-bottom:24px;padding:20px 24px;background:linear-gradient(135deg,#ecfdf5,#eff6ff);border:1.5px solid #86efac;border-radius:14px">
+          <div style="font-size:18px;font-weight:700;color:#166534;margin-bottom:8px" id="appsTitle">🚀 Siili Site Tour 2026 — Sovellusaihiot</div>
+          <p style="font-size:14px;color:#334155;line-height:1.6;margin-bottom:12px" id="appsIntro">
+            Siili Solutions kiertää Suomen toimipisteet ja jokaisella paikkakunnalla työntekijät ideoivat sovelluksia jotka AI-agentit toteuttavat livenä. Tämä on kokoelma kaikista Tourin aikana syntyneistä sovellusaihioista — jokainen rakennettu Claude Code -agentin avulla minuuteissa.
+          </p>
+          <a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:white;border:1.5px solid #86efac;border-radius:10px;font-size:14px;font-weight:600;color:#166534;text-decoration:none;transition:all 0.15s" onmouseover="this.style.background='#f0fdf4';this.style.borderColor='#22c55e'" onmouseout="this.style.background='white';this.style.borderColor='#86efac'">🔗 <span id="appsLinkText">Avaa kaikki sovellukset ↗</span></a>
+        </div>
+
+        <div style="font-size:15px;font-weight:700;color:#1e293b;margin-bottom:16px" id="appsCitiesTitle">📍 Kaupungit ja sovellukset</div>
+
+        <div id="appsList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px">
+
+          <div style="padding:16px;background:white;border:1px solid #e2e8f0;border-radius:12px">
+            <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:8px">🏙️ Helsinki</div>
+            <ul style="padding-left:16px;font-size:13px;color:#475569;line-height:1.8;margin:0">
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Helsinki_food/" target="_blank" style="color:#4338ca">Siili Lounas</a> — Ruoholahden lounasravintolat</li>
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Vaatteet_saatila/" target="_blank" style="color:#4338ca">Vaatesuositukset</a> — Säätilan mukaan</li>
+            </ul>
+          </div>
+
+          <div style="padding:16px;background:white;border:1px solid #e2e8f0;border-radius:12px">
+            <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:8px">🏙️ Joensuu</div>
+            <ul style="padding-left:16px;font-size:13px;color:#475569;line-height:1.8;margin:0">
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Joensuu_asiakas_projektireferenssit/" target="_blank" style="color:#4338ca">Asiakasreferenssit</a> — Projektireferenssien hallinta</li>
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Joensuu_biljardipöytä/" target="_blank" style="color:#4338ca">Biljardipöytä</a> — Joensuun biljardivaraukset</li>
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Joensuu_myynnistä_projektiin/" target="_blank" style="color:#4338ca">Myynnistä projektiin</a> — Myyntiprosessin seuranta</li>
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Joensuu_neukkarit/" target="_blank" style="color:#4338ca">Neukkarit</a> — Neuvotteluhuonevaraukset</li>
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Joensuu_site_tapahtumat/" target="_blank" style="color:#4338ca">Site-tapahtumat</a> — Tapahtumakalenteri</li>
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Joensuu_toimiston_laskut/" target="_blank" style="color:#4338ca">Toimiston laskut</a> — Laskujen tarkastus</li>
+            </ul>
+          </div>
+
+          <div style="padding:16px;background:white;border:1px solid #e2e8f0;border-radius:12px">
+            <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:8px">🏙️ Jyväskylä</div>
+            <ul style="padding-left:16px;font-size:13px;color:#475569;line-height:1.8;margin:0">
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Jyväskylä_desktoptester/" target="_blank" style="color:#4338ca">Desktop-testaus</a> — Sovellusten automaatiotestaus</li>
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Jyväskylä_events/" target="_blank" style="color:#4338ca">Tapahtumat</a> — Kalenteri ja tapahtumat</li>
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Jyväskylä_kukatuleetoimistolle/" target="_blank" style="color:#4338ca">Kuka tulee toimistolle?</a> — Läsnäoloseuranta</li>
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Jyväskylä_security_scan/" target="_blank" style="color:#4338ca">Security Scanner</a> — OWASP-tietoturvaskanneri</li>
+            </ul>
+          </div>
+
+          <div style="padding:16px;background:white;border:1px solid #e2e8f0;border-radius:12px">
+            <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:8px">🏙️ Kuopio</div>
+            <ul style="padding-left:16px;font-size:13px;color:#475569;line-height:1.8;margin:0">
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Kuopio_haastattelija/" target="_blank" style="color:#4338ca">Haastattelija</a> — Verkkouudistuksen haastattelutyökalu</li>
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Kuopio_lounas/" target="_blank" style="color:#4338ca">Siili Lounas</a> — Kuopion lounasravintolat</li>
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Kuopio_testausagentit/" target="_blank" style="color:#4338ca">Testausagentit</a> — Testiautomaation hallinta</li>
+            </ul>
+          </div>
+
+          <div style="padding:16px;background:white;border:1px solid #e2e8f0;border-radius:12px">
+            <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:8px">🏙️ Oulu</div>
+            <ul style="padding-left:16px;font-size:13px;color:#475569;line-height:1.8;margin:0">
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Oulu_kulttuuripaakaupunki/" target="_blank" style="color:#4338ca">Kulttuuripääkaupunki 2026</a> — Oulun kulttuuritapahtumat</li>
+            </ul>
+          </div>
+
+          <div style="padding:16px;background:white;border:1px solid #e2e8f0;border-radius:12px">
+            <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:8px">🏙️ Seinäjoki</div>
+            <ul style="padding-left:16px;font-size:13px;color:#475569;line-height:1.8;margin:0">
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Seinajoki_ruokabotti/" target="_blank" style="color:#4338ca">Lounasäänestys</a> — Analytiikka ja äänestys</li>
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Seinajoki_tuntikirjanpito/" target="_blank" style="color:#4338ca">Tuntikirjanpito</a> — Tuntien seuranta</li>
+            </ul>
+          </div>
+
+          <div style="padding:16px;background:white;border:1px solid #e2e8f0;border-radius:12px">
+            <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:8px">🏙️ Tampere</div>
+            <ul style="padding-left:16px;font-size:13px;color:#475569;line-height:1.8;margin:0">
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Tampere_golfapuri/" target="_blank" style="color:#4338ca">Golf-apuri</a> — Tampereen golfkentät</li>
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Tampere_muistuttaja/" target="_blank" style="color:#4338ca">Lempeä Muistuttaja</a> — Muistutukset ja tehtävät</li>
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Tampere_myyntitavoittet/" target="_blank" style="color:#4338ca">Myyntitavoitteet</a> — Fortera Oyj:n tavoitteet</li>
+              <li><a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/Tampere_serttiapuri/" target="_blank" style="color:#4338ca">SerttiApuri</a> — Sertifikaattien hallinta</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </div><!-- /tabApps -->
 
     <!-- Tab: Dokumentaatio -->
     <div id="tabDocs" style="display:none">
@@ -1136,6 +1220,7 @@ const i18n = {
     tabHelp: '🦸 Käyttöopas',
     tabSlides: '🎬 Slides',
     tabInvite: '💌 Kutsu kaveri',
+    tabApps: '🚀 Kaikki Sovellusaihiot',
     tabDocs: '📖 Dokumentaatio',
     ideaPlaceholder: 'Kuvaile ideasi tähän... Voit kirjoittaa millä tahansa kielellä tai käyttää mikrofonia puhuaksesi suomeksi tai englanniksi.',
     submitBtn: 'Lähetä idea',
@@ -1252,6 +1337,7 @@ const i18n = {
     tabHelp: '🦸 User Guide',
     tabSlides: '🎬 Slides',
     tabInvite: '💌 Invite a friend',
+    tabApps: '🚀 All App Prototypes',
     tabDocs: '📖 Documentation',
     ideaPlaceholder: 'Describe your idea here... You can write in any language or use the microphone to speak in Finnish or English.',
     submitBtn: 'Submit idea',
@@ -1390,6 +1476,7 @@ function applyStaticTranslations() {
   document.querySelector('[data-tab="help"]').textContent = t('tabHelp');
   document.querySelector('[data-tab="slides"]').textContent = t('tabSlides');
   document.querySelector('[data-tab="invite"]').textContent = t('tabInvite');
+  document.querySelector('[data-tab="apps"]').textContent = t('tabApps');
   document.querySelector('[data-tab="docs"]').textContent = t('tabDocs');
 
   el('inviteTitle', currentLang === 'fi' ? 'Kutsu kaveri mukaan' : 'Invite a friend');
@@ -1511,6 +1598,7 @@ function switchTab(tab) {
   document.getElementById('tabHelp').style.display = tab === 'help' ? '' : 'none';
   document.getElementById('tabSlides').style.display = tab === 'slides' ? '' : 'none';
   document.getElementById('tabInvite').style.display = tab === 'invite' ? '' : 'none';
+  document.getElementById('tabApps').style.display = tab === 'apps' ? '' : 'none';
   document.getElementById('tabDocs').style.display = tab === 'docs' ? '' : 'none';
   if (tab === 'help') renderHelp();
   if (tab === 'slides') renderSlides();
