@@ -2894,9 +2894,19 @@ function renderSlidePanel() {
   if (openIdeaId) {
     const idea = ideas.find(i => i.ideaId === openIdeaId);
     if (!idea) { openIdeaId = null; return; }
+    const thoughtInput = document.getElementById('thought-' + openIdeaId);
+    const savedText = thoughtInput ? thoughtInput.value : '';
+    const hadFocus = thoughtInput && document.activeElement === thoughtInput;
     detailEl.innerHTML =
       `<button class="btn btn-sm" style="background:#f1f5f9;color:var(--text);margin-bottom:14px;border:1px solid var(--border)" onclick="closeIdea()">${t('closeBtn')}</button>`
       + renderIdeaDetail(idea);
+    if (savedText) {
+      const restored = document.getElementById('thought-' + openIdeaId);
+      if (restored) {
+        restored.value = savedText;
+        if (hadFocus) restored.focus();
+      }
+    }
     detailEl.classList.add('open');
     overlayEl.classList.add('open');
   }
