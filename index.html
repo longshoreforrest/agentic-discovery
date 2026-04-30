@@ -835,9 +835,16 @@ body {
           <div style="font-size:48px;margin-bottom:12px">💌</div>
           <h2 style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px" id="inviteTitle">Kutsu kaveri mukaan</h2>
           <p style="font-size:14px;color:var(--text-light);margin-bottom:24px;line-height:1.5" id="inviteDesc">Luo suora kirjautumislinkki. Linkin avaaja kirjautuu automaattisesti annetulla nimellä ja pääsee heti ideoimaan.</p>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+            <input type="text" id="inviteTabNameInput" placeholder="Etunimi Sukunimi" oninput="updateInviteBtn()" style="flex:1;min-width:0;padding:12px 14px;border:1.5px solid #c7d2fe;border-radius:10px;font-size:16px;font-family:inherit;outline:none;transition:border 0.15s" onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#c7d2fe'">
+          </div>
+          <div style="position:relative;margin-bottom:12px">
+            <input type="text" id="inviteTabTicketInput" placeholder="🔍 Tiketti (valinnainen)" oninput="filterInviteTickets()" onfocus="filterInviteTickets()" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border 0.15s" onfocusin="this.style.borderColor='#4f46e5'" onblur="setTimeout(()=>document.getElementById('inviteTicketDropdown').style.display='none',200)">
+            <div id="inviteTicketDropdown" style="display:none;position:absolute;left:0;right:0;top:100%;margin-top:4px;max-height:200px;overflow-y:auto;background:white;border:1.5px solid #c7d2fe;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:100"></div>
+            <input type="hidden" id="inviteTabTicketId">
+          </div>
           <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
-            <input type="text" id="inviteTabNameInput" placeholder="Etunimi Sukunimi" style="flex:1;min-width:0;padding:12px 14px;border:1.5px solid #c7d2fe;border-radius:10px;font-size:16px;font-family:inherit;outline:none;transition:border 0.15s" onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#c7d2fe'">
-            <button onclick="generateInviteFromTab()" style="padding:12px 20px;background:linear-gradient(135deg,var(--primary),#4338ca);color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;white-space:nowrap;box-shadow:0 2px 8px rgba(79,70,229,0.2)" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform=''" id="inviteTabBtn">Luo linkki</button>
+            <button onclick="generateInviteFromTab()" style="padding:12px 20px;background:#94a3b8;color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:not-allowed;font-family:inherit;transition:all 0.15s;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.08);opacity:0.6" id="inviteTabBtn" disabled>Luo linkki</button>
           </div>
           <div id="inviteTabResult" style="display:none;margin-top:16px;text-align:left">
             <div style="display:flex;gap:6px;align-items:center;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 14px">
@@ -1329,6 +1336,8 @@ function applyStaticTranslations() {
   el('inviteTabBtn', currentLang === 'fi' ? 'Luo linkki' : 'Create link');
   const invInput = document.getElementById('inviteTabNameInput');
   if (invInput) invInput.placeholder = currentLang === 'fi' ? 'Etunimi Sukunimi' : 'First Last';
+  const invTicket = document.getElementById('inviteTabTicketInput');
+  if (invTicket) invTicket.placeholder = currentLang === 'fi' ? '🔍 Tiketti (valinnainen)' : '🔍 Ticket (optional)';
 
   el('aupLabel', currentLang === 'fi' ? 'Hyväksyn käyttöehdot' : 'I accept the terms of use');
   el('aupToggle', currentLang === 'fi' ? '(lue)' : '(read)');
@@ -2169,11 +2178,69 @@ function toggleHeaderAup() {
   }
 }
 
+function updateInviteBtn() {
+  const name = document.getElementById('inviteTabNameInput').value.trim();
+  const btn = document.getElementById('inviteTabBtn');
+  if (name) {
+    btn.disabled = false;
+    btn.style.background = 'linear-gradient(135deg,var(--primary),#4338ca)';
+    btn.style.cursor = 'pointer';
+    btn.style.opacity = '1';
+    btn.style.boxShadow = '0 2px 8px rgba(79,70,229,0.2)';
+  } else {
+    btn.disabled = true;
+    btn.style.background = '#94a3b8';
+    btn.style.cursor = 'not-allowed';
+    btn.style.opacity = '0.6';
+    btn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+  }
+}
+
+function filterInviteTickets() {
+  const query = (document.getElementById('inviteTabTicketInput').value || '').toLowerCase().trim();
+  const dropdown = document.getElementById('inviteTicketDropdown');
+  const matches = ideas.filter(i => {
+    const text = `${i.ideaId} ${i.author} ${(i.messages || []).map(m => m.text).join(' ')} ${i.agentSummary || ''}`.toLowerCase();
+    return !query || text.includes(query);
+  }).slice(0, 8);
+  if (matches.length === 0) { dropdown.style.display = 'none'; return; }
+  dropdown.innerHTML = matches.map(i => {
+    const preview = (i.messages && i.messages[0]) ? i.messages[0].text.substring(0, 60) : '';
+    const statusIcon = { 'new': '🆕', 'in-progress': '🔧', 'done': '✅', 'blocked': '🚫' }[i.status] || '🆕';
+    return `<div onclick="selectInviteTicket('${i.ideaId}','${esc(preview).replace(/'/g,'\\&#39;')}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f1f5f9;transition:background 0.1s;font-size:13px" onmouseover="this.style.background='#f5f3ff'" onmouseout="this.style.background='white'">
+      <div style="display:flex;align-items:center;gap:6px;font-weight:600;color:var(--text)">${statusIcon} ${i.ideaId} <span style="font-weight:400;color:var(--text-light)">— ${esc(i.author)}</span></div>
+      ${preview ? `<div style="font-size:12px;color:var(--text-light);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(preview)}</div>` : ''}
+    </div>`;
+  }).join('');
+  dropdown.style.display = '';
+}
+
+function selectInviteTicket(ideaId, preview) {
+  document.getElementById('inviteTabTicketInput').value = ideaId;
+  document.getElementById('inviteTabTicketId').value = ideaId;
+  document.getElementById('inviteTicketDropdown').style.display = 'none';
+}
+
+function clearInviteTicket() {
+  document.getElementById('inviteTabTicketInput').value = '';
+  document.getElementById('inviteTabTicketId').value = '';
+}
+
+function inviteToIdea(ideaId) {
+  switchTab('invite');
+  document.getElementById('inviteTabTicketInput').value = ideaId;
+  document.getElementById('inviteTabTicketId').value = ideaId;
+  document.getElementById('inviteTabNameInput').focus();
+  updateInviteBtn();
+}
+
 function generateInviteFromTab() {
   const name = document.getElementById('inviteTabNameInput').value.trim();
   if (!name) { showToast(currentLang === 'fi' ? 'Anna nimi' : 'Enter a name'); return; }
+  const ticketId = document.getElementById('inviteTabTicketId').value.trim();
   const base = window.location.origin + window.location.pathname;
-  const url = `${base}?name=${encodeURIComponent(name)}`;
+  let url = `${base}?name=${encodeURIComponent(name)}`;
+  if (ticketId) url += `&idea=${encodeURIComponent(ticketId)}`;
   document.getElementById('inviteTabUrlText').textContent = url;
   document.getElementById('inviteTabResult').style.display = '';
 }
@@ -2489,6 +2556,7 @@ function renderIdeaDetail(idea) {
       <a href="${DEPLOY_BASE_URL}/${idea.ideaId}/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;font-size:13px;color:#4338ca;text-decoration:none;font-weight:500">🔗 ${DEPLOY_BASE_URL}/${idea.ideaId}/ ↗</a>
       ${idea.appUrl ? `<a href="${esc(idea.appUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#ecfdf5;border:1px solid #86efac;border-radius:8px;font-size:13px;color:#166534;text-decoration:none;font-weight:500">${t('appLink')}</a>` : ''}
       ${isOrchestrator(currentUser) ? `<button onclick="event.stopPropagation();editAppUrl('${idea.ideaId}')" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:white;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;color:var(--text-light);cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-light)'">${idea.appUrl ? '✏️' : '➕'} ${currentLang === 'fi' ? 'Muokkaa URL' : 'Edit URL'}</button>` : ''}
+      <button onclick="event.stopPropagation();closeIdea();inviteToIdea('${idea.ideaId}')" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:white;border:1.5px solid #fbbf24;border-radius:8px;font-size:12px;font-weight:600;color:#92400e;cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.background='#fffbeb'" onmouseout="this.style.background='white'">💌 ${currentLang === 'fi' ? 'Kutsu kaveri' : 'Invite friend'}</button>
     </div>
     ${messagesHtml}
     ${blockedHtml}
@@ -3440,7 +3508,9 @@ function renderAll() {
 const saved = localStorage.getItem('ideaagent_username');
 if (saved) document.getElementById('loginName').value = saved;
 
-const urlName = new URLSearchParams(window.location.search).get('name');
+const urlParams = new URLSearchParams(window.location.search);
+const urlName = urlParams.get('name');
+const urlIdea = urlParams.get('idea');
 if (urlName && urlName.trim()) {
   document.getElementById('loginName').value = urlName.trim();
   setTimeout(() => document.getElementById('loginForm').dispatchEvent(new Event('submit')), 100);
@@ -3495,6 +3565,13 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     document.getElementById('langToggle').style.display = 'flex';
     document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLang));
     applyStaticTranslations();
+
+    if (urlIdea && urlIdea.trim()) {
+      setTimeout(() => {
+        const target = ideas.find(i => i.ideaId === urlIdea.trim());
+        if (target) openIdea(target.ideaId);
+      }, 300);
+    }
   } catch(err) {
     console.error('Login error:', err);
     showToast(t('toastConnError'));
