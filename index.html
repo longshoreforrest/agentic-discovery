@@ -797,6 +797,21 @@ body {
     <!-- Tab: Dokumentaatio -->
     <div id="tabDocs" style="display:none">
       <div class="docs-section">
+        <!-- GitLab deploy info -->
+        <div style="margin-bottom:20px;padding:16px 20px;background:linear-gradient(135deg,#fdf4ff,#ede9fe);border:1.5px solid #c4b5fd;border-radius:14px">
+          <div style="font-size:15px;font-weight:700;color:#5b21b6;margin-bottom:8px">🚀 Deploy Pipeline</div>
+          <div style="font-size:13px;color:var(--text-light);line-height:1.7;margin-bottom:10px">
+            Agentit luovat sovellukset GitLab-repoon alihakemistoihin. Julkaisu tapahtuu automaattisesti GitLab Pagesin kautta kun koodi pushataan <code style="background:#e5e7eb;padding:1px 5px;border-radius:4px;font-size:12px">main</code>-haaraan.
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+            <a href="https://gitlab.siilicloud.com/tapio.pitkaranta/rapid-agent-prototypes/-/tree/main/Site_Tour?ref_type=heads" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:white;border:1.5px solid #c4b5fd;border-radius:8px;font-size:13px;color:#5b21b6;text-decoration:none;font-weight:600;transition:all 0.15s" onmouseover="this.style.background='#f5f3ff'" onmouseout="this.style.background='white'">🦊 GitLab Repo</a>
+            <a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:white;border:1.5px solid #86efac;border-radius:8px;font-size:13px;color:#166534;text-decoration:none;font-weight:600;transition:all 0.15s" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='white'">🌐 GitLab Pages</a>
+          </div>
+          <div style="margin-top:10px;font-size:12px;color:var(--text-light)">
+            <code style="background:#e5e7eb;padding:1px 5px;border-radius:4px;font-size:11px">git push</code> → GitLab CI → Pages julkaisu → <code style="background:#e5e7eb;padding:1px 5px;border-radius:4px;font-size:11px">rapid-agent-prototypes-af869c.gitlab-siili.io/{hakemisto}/</code>
+          </div>
+        </div>
+
         <h2 id="docsTitle" style="font-size:20px;font-weight:700;margin-bottom:4px;color:var(--text)">Työnkulku</h2>
         <p id="docsSubtitle" style="font-size:13px;color:var(--text-light);margin-bottom:16px">Klikkaa kaavion vaihetta nähdäksesi lisätietoja</p>
 
