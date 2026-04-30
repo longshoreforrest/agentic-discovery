@@ -99,6 +99,45 @@ body {
 .lang-btn:hover { background: rgba(255,255,255,0.2) !important; color: white !important; }
 .lang-btn.active { background: rgba(255,255,255,0.25) !important; color: white !important; border-color: rgba(255,255,255,0.4) !important; }
 
+/* ── Mentions Notification ── */
+.mentions-btn {
+  position: relative; display: none; align-items: center; gap: 3px;
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.8); padding: 4px 10px; border-radius: 16px;
+  font-size: 14px; cursor: pointer; transition: all 0.15s; font-family: inherit;
+}
+.mentions-btn:hover { background: rgba(255,255,255,0.25); color: white; }
+.mentions-badge {
+  position: absolute; top: -4px; right: -4px;
+  background: #ef4444; color: white; font-size: 10px; font-weight: 700;
+  min-width: 16px; height: 16px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 4px; line-height: 1;
+}
+.mentions-dropdown {
+  display: none; position: fixed; top: 56px; right: 16px;
+  background: white; border-radius: 16px;
+  box-shadow: var(--shadow-lg); z-index: 1100;
+  min-width: 300px; max-width: 400px; overflow: hidden;
+}
+.mentions-dropdown-header {
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+  font-size: 13px; font-weight: 600; color: var(--text);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.mentions-list { padding: 8px 0; max-height: 350px; overflow-y: auto; }
+.mention-item {
+  padding: 10px 16px; cursor: pointer; transition: background 0.1s;
+  border-bottom: 1px solid var(--border);
+}
+.mention-item:last-child { border-bottom: none; }
+.mention-item:hover { background: #f8fafc; }
+.mention-item.unread { background: #eff6ff; }
+.mention-item.unread:hover { background: #dbeafe; }
+.mention-from { font-weight: 600; color: var(--text); font-size: 13px; }
+.mention-preview { color: var(--text-light); font-size: 12px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mention-time { color: var(--text-light); font-size: 11px; margin-top: 2px; }
+
 /* ── Presence Popup ── */
 .presence-popup {
   display: none; position: fixed; top: 56px; right: 16px;
@@ -690,6 +729,9 @@ body {
       <span style="font-size:14px;margin-right:3px">🤖</span>
       <span id="agentCount">0</span>
     </button>
+    <button class="mentions-btn" id="mentionsBtn" onclick="toggleMentionsDropdown()">
+      🔔 <span id="mentionsBadge" class="mentions-badge" style="display:none">0</span>
+    </button>
     <button class="logout-btn" id="aupHeaderBtn" style="display:none;font-size:10px;opacity:0.7;padding:2px 8px;background:transparent;border:1px solid rgba(255,255,255,0.25);border-radius:6px;color:white;cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.opacity='1';this.style.borderColor='rgba(255,255,255,0.5)'" onmouseout="this.style.opacity='0.7';this.style.borderColor='rgba(255,255,255,0.25)'" onclick="toggleHeaderAup()">AUP</button>
     <button class="logout-btn" id="logoutBtn" style="display:none" onclick="logout()">Ulos</button>
   </div>
@@ -699,6 +741,15 @@ body {
     <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:8px">Acceptable Use Policy</div>
     <div id="headerAupContent"></div>
     <button onclick="document.getElementById('headerAupPopup').style.display='none'" style="margin-top:10px;padding:5px 16px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit" id="headerAupClose">Sulje</button>
+  </div>
+
+  <!-- Mentions dropdown -->
+  <div class="mentions-dropdown" id="mentionsDropdown">
+    <div class="mentions-dropdown-header">
+      <span id="mentionsDropdownTitle">🔔 Maininnat</span>
+      <button onclick="markAllMentionsRead()" style="font-size:11px;padding:3px 10px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;color:#475569;cursor:pointer;font-family:inherit;font-weight:600" id="mentionsMarkAllBtn">Merkitse luetuksi</button>
+    </div>
+    <div class="mentions-list" id="mentionsList"></div>
   </div>
 
   <!-- Presence popup (users) -->
@@ -1181,6 +1232,11 @@ const i18n = {
     ccAfterAgentDesc: 'Pyynnöt edellisen agentin käsittelyn jälkeen',
     toastCCCopied: 'Claude Code -prompti kopioitu leikepöydälle!',
     toastCCNoMsgs: 'Ei uusia pyyntöjä kopioitavaksi.',
+    mentionsTitle: '🔔 Maininnat',
+    mentionsMarkAll: 'Merkitse luetuksi',
+    mentionsEmpty: 'Ei mainintoja',
+    mentionedYou: 'mainitsi sinut tiketissä',
+    toastMentionSent: 'Maininta lähetetty!',
   },
   en: {
     loginSubtitle: 'Share your idea — we build it',
@@ -1292,6 +1348,11 @@ const i18n = {
     ccAfterAgentDesc: 'Requests after last agent processing',
     toastCCCopied: 'Claude Code prompt copied to clipboard!',
     toastCCNoMsgs: 'No new requests to copy.',
+    mentionsTitle: '🔔 Mentions',
+    mentionsMarkAll: 'Mark all read',
+    mentionsEmpty: 'No mentions',
+    mentionedYou: 'mentioned you in ticket',
+    toastMentionSent: 'Mention sent!',
   }
 };
 
@@ -1679,6 +1740,145 @@ document.addEventListener('click', e => {
 });
 
 // ══════════════════════════════════════════════════════════════
+// ── Mentions (@-maininnat) ──
+// ══════════════════════════════════════════════════════════════
+
+let mentions = [];
+let mentionsUnsub = null;
+
+function startRealtimeMentions() {
+  if (mentionsUnsub) mentionsUnsub();
+  const toUser = currentUser.toLowerCase();
+  mentionsUnsub = db.collection('categories').doc(CATEGORY).collection('mentions')
+    .where('to', '==', toUser)
+    .orderBy('timestamp', 'desc')
+    .limit(50)
+    .onSnapshot(snap => {
+      mentions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderMentionsBadge();
+    }, err => { console.warn('Realtime mentions error:', err); });
+}
+
+function stopRealtimeMentions() {
+  if (mentionsUnsub) { mentionsUnsub(); mentionsUnsub = null; }
+}
+
+function renderMentionsBadge() {
+  const btn = document.getElementById('mentionsBtn');
+  const badge = document.getElementById('mentionsBadge');
+  const unread = mentions.filter(m => !m.read).length;
+  if (btn) btn.style.display = 'inline-flex';
+  if (badge) {
+    badge.textContent = unread;
+    badge.style.display = unread > 0 ? 'flex' : 'none';
+  }
+}
+
+function toggleMentionsDropdown() {
+  const dd = document.getElementById('mentionsDropdown');
+  const isOpen = dd.style.display === 'block';
+  dd.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) renderMentionsList();
+}
+
+function renderMentionsList() {
+  const list = document.getElementById('mentionsList');
+  document.getElementById('mentionsDropdownTitle').textContent = t('mentionsTitle');
+  document.getElementById('mentionsMarkAllBtn').textContent = t('mentionsMarkAll');
+  if (mentions.length === 0) {
+    list.innerHTML = `<div style="padding:16px;text-align:center;color:var(--text-light);font-size:13px">${t('mentionsEmpty')}</div>`;
+    return;
+  }
+  list.innerHTML = mentions.map(m => {
+    const cls = m.read ? 'mention-item' : 'mention-item unread';
+    const preview = (m.text || '').substring(0, 80);
+    const time = formatDateTime(m.timestamp);
+    return `<div class="${cls}" onclick="openMention('${m.id}','${esc(m.ideaId)}')">
+      <div class="mention-from">${esc(m.fromDisplay)} ${t('mentionedYou')}</div>
+      <div class="mention-preview">${esc(preview)}</div>
+      <div class="mention-time">${time}</div>
+    </div>`;
+  }).join('');
+}
+
+async function openMention(mentionId, ideaId) {
+  document.getElementById('mentionsDropdown').style.display = 'none';
+  const m = mentions.find(x => x.id === mentionId);
+  if (m && !m.read) {
+    try {
+      await db.collection('categories').doc(CATEGORY).collection('mentions').doc(mentionId).update({ read: true });
+    } catch(e) { console.warn('markMentionRead:', e); }
+  }
+  const idea = ideas.find(i => i.ideaId === ideaId);
+  if (idea) openIdea(ideaId);
+}
+
+async function markAllMentionsRead() {
+  const unread = mentions.filter(m => !m.read);
+  const batch = db.batch();
+  unread.forEach(m => {
+    batch.update(db.collection('categories').doc(CATEGORY).collection('mentions').doc(m.id), { read: true });
+  });
+  try {
+    await batch.commit();
+    renderMentionsList();
+  } catch(e) { console.warn('markAllMentionsRead:', e); }
+}
+
+function extractMentions(text) {
+  const pattern = /@([A-ZÄÖÅa-zäöå][A-ZÄÖÅa-zäöå]*(?:\s+[A-ZÄÖÅa-zäöå][A-ZÄÖÅa-zäöå]*)?)/g;
+  const found = [];
+  let match;
+  while ((match = pattern.exec(text)) !== null) {
+    found.push(match[1]);
+  }
+  return found;
+}
+
+async function createMentions(text, ideaId, fromUser) {
+  const mentioned = extractMentions(text);
+  if (mentioned.length === 0) return;
+
+  const allUsers = new Set();
+  sessions.forEach(s => allUsers.add(s.user));
+  ideas.forEach(i => {
+    allUsers.add(i.author);
+    (i.messages || []).forEach(m => { if (m.author) allUsers.add(m.author); });
+  });
+
+  const userMap = {};
+  allUsers.forEach(u => { userMap[u.toLowerCase()] = u; });
+
+  for (const name of mentioned) {
+    const key = name.toLowerCase();
+    const matchedUser = userMap[key] || Object.entries(userMap).find(([k]) => k.startsWith(key))?.[1];
+    if (!matchedUser || matchedUser.toLowerCase() === fromUser.toLowerCase()) continue;
+
+    try {
+      await db.collection('categories').doc(CATEGORY).collection('mentions').add({
+        from: fromUser.toLowerCase(),
+        fromDisplay: fromUser,
+        to: matchedUser.toLowerCase(),
+        toDisplay: matchedUser,
+        ideaId: ideaId,
+        text: text.substring(0, 200),
+        timestamp: new Date().toISOString(),
+        read: false,
+        category: CATEGORY
+      });
+    } catch(e) { console.warn('createMention:', e); }
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const dd = document.getElementById('mentionsDropdown');
+  const btn = document.getElementById('mentionsBtn');
+  if (dd && dd.style.display === 'block' && !dd.contains(e.target) && !btn.contains(e.target)) {
+    dd.style.display = 'none';
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
 // ── Speech-to-Text (Web Speech API) ──
 // ══════════════════════════════════════════════════════════════
 
@@ -1789,6 +1989,7 @@ async function submitIdea() {
     await saveIdea(ideaData);
     ideas.unshift(ideaData);
     document.getElementById('ideaText').value = '';
+    createMentions(text, ideaData.ideaId, currentUser);
     showToast(t('toastIdeaSent'));
     renderAll();
   } catch(e) {
@@ -1828,6 +2029,7 @@ async function addThought(ideaId) {
     idea.messages = idea.messages || [];
     idea.messages.push(msg);
     input.value = '';
+    createMentions(text, ideaId, currentUser);
     renderAll();
     showToast(t('toastThoughtAdded'));
   } catch(e) {
@@ -3566,6 +3768,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     startRealtimeIdeas();
     startRealtimeAgentSessions();
     startRealtimeSessions();
+    startRealtimeMentions();
     renderAll();
     showRoleWelcome();
     showHeaderRole();
@@ -3592,6 +3795,7 @@ function logout() {
   stopRealtimeIdeas();
   stopRealtimeAgentSessions();
   stopRealtimeSessions();
+  stopRealtimeMentions();
   removeSession();
   currentUser = '';
   document.getElementById('loginOverlay').style.display = 'flex';
@@ -3603,6 +3807,8 @@ function logout() {
   document.getElementById('aupHeaderBtn').style.display = 'none';
   document.getElementById('headerAupPopup').style.display = 'none';
   document.getElementById('presenceBtn').style.display = 'none';
+  document.getElementById('mentionsBtn').style.display = 'none';
+  document.getElementById('mentionsDropdown').style.display = 'none';
   document.getElementById('blockedBanner').style.display = 'none';
   document.getElementById('ideaText').disabled = false;
   document.getElementById('submitBtn').disabled = false;
