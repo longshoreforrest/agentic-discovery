@@ -2856,7 +2856,7 @@ function renderIdeaDetail(idea) {
     </div>` : ''}
     <div style="margin:8px 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
       ${isOrchestrator(currentUser) ? `<a href="${DEPLOY_BASE_URL}/${idea.gitDir || defaultGitDir(idea.ideaId)}/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;font-size:13px;color:#4338ca;text-decoration:none;font-weight:500">🔗 ${DEPLOY_BASE_URL}/${idea.gitDir || defaultGitDir(idea.ideaId)}/ ↗</a>` : ''}
-      ${idea.appUrl ? `<a href="${esc(idea.appUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#ecfdf5;border:1px solid #86efac;border-radius:8px;font-size:13px;color:#166534;text-decoration:none;font-weight:500">${t('appLink')}</a>` : ''}
+      ${idea.appUrl ? `<a href="${esc(idea.appUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#ecfdf5;border:1px solid #86efac;border-radius:8px;font-size:13px;color:#166534;text-decoration:none;font-weight:500">${t('appLink')}</a>` : `<a href="${DEPLOY_BASE_URL}/${idea.gitDir || defaultGitDir(idea.ideaId)}/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#ecfdf5;border:1px solid #86efac;border-radius:8px;font-size:13px;color:#166534;text-decoration:none;font-weight:500">${t('appLink')}</a>`}
       ${isOrchestrator(currentUser) ? `<button onclick="event.stopPropagation();editAppUrl('${idea.ideaId}')" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:white;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;color:var(--text-light);cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-light)'">${idea.appUrl ? '✏️' : '➕'} ${currentLang === 'fi' ? 'Muokkaa URL' : 'Edit URL'}</button>` : ''}
       <button onclick="event.stopPropagation();closeIdea();inviteToIdea('${idea.ideaId}')" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:white;border:1.5px solid #fbbf24;border-radius:8px;font-size:12px;font-weight:600;color:#92400e;cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.background='#fffbeb'" onmouseout="this.style.background='white'">💌 ${currentLang === 'fi' ? 'Kutsu kaveri' : 'Invite friend'}</button>
     </div>
@@ -2874,6 +2874,9 @@ function renderIdeaDetail(idea) {
       </div>
     </div>` : ''}
     ${addThoughtHtml}
+    <div style="margin:12px 0 4px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center">
+      <a href="${idea.appUrl ? esc(idea.appUrl) : `${DEPLOY_BASE_URL}/${idea.gitDir || defaultGitDir(idea.ideaId)}/`}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#ecfdf5;border:1.5px solid #86efac;border-radius:10px;font-size:14px;color:#166534;text-decoration:none;font-weight:600;transition:all 0.15s" onmouseover="this.style.background='#dcfce7';this.style.borderColor='#22c55e'" onmouseout="this.style.background='#ecfdf5';this.style.borderColor='#86efac'">${t('appLink')}</a>
+    </div>
   </div>`;
 }
 
