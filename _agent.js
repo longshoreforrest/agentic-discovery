@@ -232,6 +232,7 @@ async function main() {
     }
 
     const rawDoc = await firestoreGet(`categories/${category}/ideas/${ideaId}`);
+    const idea = parseDoc(rawDoc);
     const rawMsgs = getRawMessages(rawDoc);
 
     const statusText = message || `Status vaihdettu → ${newStatus}`;
@@ -241,9 +242,13 @@ async function main() {
     });
     rawMsgs.push(agentMsg);
 
+    let lastUserIndex = -1;
+    (idea.messages || []).forEach((m, i) => { if (m.role === 'user') lastUserIndex = i; });
+
     const fields = {
       status: { stringValue: newStatus },
-      messages: { arrayValue: { values: rawMsgs } }
+      messages: { arrayValue: { values: rawMsgs } },
+      lastProcessedIndex: { integerValue: String(lastUserIndex) }
     };
     if (newStatus === 'done') {
       fields.completedAt = { stringValue: new Date().toISOString() };
@@ -251,6 +256,7 @@ async function main() {
 
     await firestorePatch(`categories/${category}/ideas/${ideaId}`, fields);
     console.log(`\n✓ Status: ${newStatus}`);
+    console.log(`✓ lastProcessedIndex → ${lastUserIndex}`);
     console.log(`✓ Viesti: ${statusText}`);
   }
 
