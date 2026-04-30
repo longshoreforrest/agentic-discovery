@@ -1015,9 +1015,9 @@ const i18n = {
     stampWip: '🤖 Käsitelty tähän asti — uudet alla',
     stampAllDone: '✅ Kaikki käsitelty — valmis',
     stampAllWip: '🤖 Kaikki käsitelty tähän asti',
-    sysAssigned: '🧙‍♂️ {name} astui komentosillalle — agentit valmiina!  🤖🤖🤖',
-    sysReleasedSelf: '🧙‍♂️ {name} luovutti komentosauvan — "Muu velho hoitakoon tämän seikkailun!"',
-    sysReleasedOther: '🧙‍♂️ {name} siirsi komentosauvan pois orchestratorilta {other}.',
+    sysAssigned: '🧙‍♂️ Orchestrator {name} otti tiketin ohjaukseensa — agentit valmiina! 🤖🤖🤖',
+    sysReleasedSelf: '🧙‍♂️ Orchestrator {name} luovutti ohjauksen — "Muu velho hoitakoon tämän seikkailun!"',
+    sysReleasedOther: '🧙‍♂️ Orchestrator {name} siirsi ohjauksen pois orchestratorilta {other}.',
     roleOrchestrator: '🧙‍♂️ Orchestrator',
     roleDreamer: '🦄 Dreamer',
     welcomeTitle: 'Tervetuloa, {name}!',
@@ -1124,9 +1124,9 @@ const i18n = {
     stampWip: '🤖 Processed up to here — new below',
     stampAllDone: '✅ All processed — done',
     stampAllWip: '🤖 All processed so far',
-    sysAssigned: '🧙‍♂️ {name} took the command bridge — robots standing by! 🤖🤖🤖',
-    sysReleasedSelf: '🧙‍♂️ {name} passed the wand — "Another wizard shall lead this quest!"',
-    sysReleasedOther: '🧙‍♂️ {name} reassigned the wand from {other}.',
+    sysAssigned: '🧙‍♂️ Orchestrator {name} took command — robots standing by! 🤖🤖🤖',
+    sysReleasedSelf: '🧙‍♂️ Orchestrator {name} released command — "Another wizard shall lead this quest!"',
+    sysReleasedOther: '🧙‍♂️ Orchestrator {name} reassigned command from orchestrator {other}.',
     roleOrchestrator: '🧙‍♂️ Orchestrator',
     roleDreamer: '🦄 Dreamer',
     welcomeTitle: 'Welcome, {name}!',
@@ -1166,6 +1166,8 @@ function t(key, params) {
 function setLang(lang) {
   currentLang = lang;
   localStorage.setItem('ideaagent_lang', lang);
+  const speechLangEl = document.getElementById('speechLang');
+  if (speechLangEl) speechLangEl.value = lang === 'en' ? 'en-US' : 'fi-FI';
   applyStaticTranslations();
   renderAll();
   if (document.getElementById('tabHelp').style.display !== 'none') renderHelp();
@@ -1803,11 +1805,16 @@ Suorita seuraavat vaiheet järjestyksessä:
 3. Raportoi mitä teit:
    node _agent.js reply ${CATEGORY} ${ideaId} "Toteutettu: [lyhyt yhteenveto mitä tehtiin]"
 
-4. Tarkista onko uusia pyyntöjä tullut:
+4. Commitoi ja pushaa muutokset versionhallintaan:
+   git add -A
+   git commit -m "Idea ${ideaId}: [lyhyt kuvaus toteutuksesta]"
+   git push
+
+5. Tarkista onko uusia pyyntöjä tullut:
    node _agent.js pending ${CATEGORY} ${ideaId}
 
-5a. Jos uusia pyyntöjä → toteuta ne ja toista vaihe 3-4.
-5b. Jos ei uusia → merkitse valmis:
+6a. Jos uusia pyyntöjä → toteuta ne ja toista vaiheet 3-5.
+6b. Jos ei uusia → merkitse valmis:
    node _agent.js status ${CATEGORY} ${ideaId} done "🤖 Agentti on valmis — työ tehty"`;
 
   navigator.clipboard.writeText(prompt).then(() => showToast(t('toastCCCopied')));
