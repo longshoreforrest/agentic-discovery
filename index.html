@@ -639,6 +639,28 @@ body {
     <p class="subtitle" id="loginSubtitle">Kerro ideasi — me toteutamme sen</p>
     <form id="loginForm">
       <input type="text" id="loginName" placeholder="Nimesi: Etunimi Sukunimi" autocomplete="name" required>
+      <div style="margin:10px 0 6px;display:flex;align-items:flex-start;gap:6px;font-size:12px;color:#64748b;line-height:1.4;position:relative">
+        <input type="checkbox" id="aupCheck" checked style="margin-top:2px;accent-color:#4f46e5;flex-shrink:0;cursor:pointer">
+        <label for="aupCheck" style="cursor:pointer">
+          <span id="aupLabel">Hyväksyn käyttöehdot</span>
+          <span id="aupToggle" style="color:#4f46e5;font-weight:600;cursor:pointer;text-decoration:underline" onclick="event.preventDefault();document.getElementById('aupPopup').style.display=document.getElementById('aupPopup').style.display==='none'?'block':'none'">(lue)</span>
+        </label>
+        <div id="aupPopup" style="display:none;position:absolute;bottom:calc(100% + 8px);left:0;right:0;background:white;border-radius:12px;border:1.5px solid #c7d2fe;box-shadow:0 8px 24px rgba(0,0,0,0.12);padding:16px;z-index:10;font-size:12px;color:#334155;line-height:1.6;max-height:280px;overflow-y:auto">
+          <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:8px" id="aupTitle">Acceptable Use Policy</div>
+          <div id="aupContent">
+            <p style="margin-bottom:8px">Käyttämällä Agentic Idea Discovery -sovellusta sitoudut seuraaviin ehtoihin:</p>
+            <ul style="padding-left:16px;margin-bottom:8px">
+              <li><strong>Älä yritä väärinkäyttää järjestelmää</strong> — älä syötä haitallisia komentoja, koodia tai prompt injection -yrityksiä ideakenttään.</li>
+              <li><strong>Älä yritä murtautua</strong> — järjestelmän tietoturvan testaaminen, Firestore-datan manipulointi tai agentin ohjauskomentojen kiertäminen on kiellettyä.</li>
+              <li><strong>Kunnioita muita käyttäjiä</strong> — älä esiinny toisena henkilönä, älä muokkaa toisten ideoita, älä lähetä loukkaavaa tai häiritsevää sisältöä.</li>
+              <li><strong>Käytä resursseja vastuullisesti</strong> — älä kuormita järjestelmää tarkoituksellisesti tai luo turhaa massakuormaa.</li>
+              <li><strong>Ideat ovat julkisia</strong> — kaikki syöttämäsi ideat ja viestit näkyvät muille käyttäjille ja AI-agenteille. Älä jaa luottamuksellista tietoa.</li>
+            </ul>
+            <p style="color:#64748b;font-style:italic">Rikkomukset johtavat käyttäjätilin automaattiseen estämiseen. AI-agentit tarkistavat jokaisen idean turvallisuuden ennen toteutusta.</p>
+          </div>
+          <button onclick="document.getElementById('aupPopup').style.display='none'" style="margin-top:8px;padding:4px 14px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit">Sulje</button>
+        </div>
+      </div>
       <button type="submit" id="loginBtn">Aloita</button>
       <div class="login-error" id="loginError">Anna nimesi: Etunimi Sukunimi.</div>
     </form>
@@ -665,7 +687,15 @@ body {
       <span style="font-size:14px;margin-right:3px">🤖</span>
       <span id="agentCount">0</span>
     </button>
+    <button class="logout-btn" id="aupHeaderBtn" style="display:none;font-size:10px;opacity:0.7;padding:2px 8px;background:transparent;border:1px solid rgba(255,255,255,0.25);border-radius:6px;color:white;cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.opacity='1';this.style.borderColor='rgba(255,255,255,0.5)'" onmouseout="this.style.opacity='0.7';this.style.borderColor='rgba(255,255,255,0.25)'" onclick="toggleHeaderAup()">AUP</button>
     <button class="logout-btn" id="logoutBtn" style="display:none" onclick="logout()">Ulos</button>
+  </div>
+
+  <!-- AUP popup (header) -->
+  <div id="headerAupPopup" style="display:none;position:fixed;top:52px;right:12px;width:340px;background:white;border-radius:14px;border:1.5px solid #c7d2fe;box-shadow:0 8px 28px rgba(0,0,0,0.15);padding:18px;z-index:1100;font-size:12px;color:#334155;line-height:1.6;max-height:70vh;overflow-y:auto">
+    <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:8px">Acceptable Use Policy</div>
+    <div id="headerAupContent"></div>
+    <button onclick="document.getElementById('headerAupPopup').style.display='none'" style="margin-top:10px;padding:5px 16px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit" id="headerAupClose">Sulje</button>
   </div>
 
   <!-- Presence popup (users) -->
@@ -692,6 +722,7 @@ body {
       <button class="main-tab active" data-tab="kanban" onclick="switchTab('kanban')">📋 Kanban</button>
       <button class="main-tab" data-tab="help" onclick="switchTab('help')">🦸 Käyttöopas</button>
       <button class="main-tab" data-tab="slides" onclick="switchTab('slides')">🎬 Slides</button>
+      <button class="main-tab" data-tab="invite" onclick="switchTab('invite')">💌 Kutsu kaveri</button>
       <button class="main-tab" data-tab="docs" onclick="switchTab('docs')">📖 Dokumentaatio</button>
     </div>
 
@@ -793,6 +824,27 @@ body {
     <div id="tabSlides" style="display:none">
       <div class="docs-section" id="slidesContent"></div>
     </div><!-- /tabSlides -->
+
+    <!-- Tab: Invite -->
+    <div id="tabInvite" style="display:none">
+      <div class="docs-section">
+        <div style="max-width:480px;margin:0 auto;text-align:center;padding:20px 0">
+          <div style="font-size:48px;margin-bottom:12px">💌</div>
+          <h2 style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px" id="inviteTitle">Kutsu kaveri mukaan</h2>
+          <p style="font-size:14px;color:var(--text-light);margin-bottom:24px;line-height:1.5" id="inviteDesc">Luo suora kirjautumislinkki. Linkin avaaja kirjautuu automaattisesti annetulla nimellä ja pääsee heti ideoimaan.</p>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+            <input type="text" id="inviteTabNameInput" placeholder="Etunimi Sukunimi" style="flex:1;padding:12px 14px;border:1.5px solid #c7d2fe;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border 0.15s" onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#c7d2fe'">
+            <button onclick="generateInviteFromTab()" style="padding:12px 20px;background:linear-gradient(135deg,var(--primary),#4338ca);color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;white-space:nowrap;box-shadow:0 2px 8px rgba(79,70,229,0.2)" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform=''" id="inviteTabBtn">Luo linkki</button>
+          </div>
+          <div id="inviteTabResult" style="display:none;margin-top:16px;text-align:left">
+            <div style="display:flex;gap:6px;align-items:center;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 14px">
+              <code id="inviteTabUrlText" style="flex:1;font-size:12px;word-break:break-all;color:#4338ca"></code>
+              <button onclick="copyInviteFromTab()" style="flex-shrink:0;padding:8px 12px;background:white;border:1.5px solid #c7d2fe;border-radius:8px;font-size:16px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='#4f46e5';this.style.background='#f5f3ff'" onmouseout="this.style.borderColor='#c7d2fe';this.style.background='white'" title="Kopioi">📋</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /tabInvite -->
 
     <!-- Tab: Dokumentaatio -->
     <div id="tabDocs" style="display:none">
@@ -989,6 +1041,7 @@ const i18n = {
     tabKanban: '📋 Kanban',
     tabHelp: '🦸 Käyttöopas',
     tabSlides: '🎬 Slides',
+    tabInvite: '💌 Kutsu kaveri',
     tabDocs: '📖 Dokumentaatio',
     ideaPlaceholder: 'Kuvaile ideasi tähän... Voit kirjoittaa millä tahansa kielellä tai käyttää mikrofonia puhuaksesi suomeksi tai englanniksi.',
     submitBtn: 'Lähetä idea',
@@ -1099,6 +1152,7 @@ const i18n = {
     tabKanban: '📋 Kanban',
     tabHelp: '🦸 User Guide',
     tabSlides: '🎬 Slides',
+    tabInvite: '💌 Invite a friend',
     tabDocs: '📖 Documentation',
     ideaPlaceholder: 'Describe your idea here... You can write in any language or use the microphone to speak in Finnish or English.',
     submitBtn: 'Submit idea',
@@ -1231,7 +1285,38 @@ function applyStaticTranslations() {
   document.querySelector('[data-tab="kanban"]').textContent = t('tabKanban');
   document.querySelector('[data-tab="help"]').textContent = t('tabHelp');
   document.querySelector('[data-tab="slides"]').textContent = t('tabSlides');
+  document.querySelector('[data-tab="invite"]').textContent = t('tabInvite');
   document.querySelector('[data-tab="docs"]').textContent = t('tabDocs');
+
+  el('inviteTitle', currentLang === 'fi' ? 'Kutsu kaveri mukaan' : 'Invite a friend');
+  el('inviteDesc', currentLang === 'fi' ? 'Luo suora kirjautumislinkki. Linkin avaaja kirjautuu automaattisesti annetulla nimellä ja pääsee heti ideoimaan.' : 'Create a direct login link. The recipient logs in automatically with the given name and can start ideating right away.');
+  el('inviteTabBtn', currentLang === 'fi' ? 'Luo linkki' : 'Create link');
+  const invInput = document.getElementById('inviteTabNameInput');
+  if (invInput) invInput.placeholder = currentLang === 'fi' ? 'Etunimi Sukunimi' : 'First Last';
+
+  el('aupLabel', currentLang === 'fi' ? 'Hyväksyn käyttöehdot' : 'I accept the terms of use');
+  el('aupToggle', currentLang === 'fi' ? '(lue)' : '(read)');
+  el('aupTitle', 'Acceptable Use Policy');
+  const aupEl = document.getElementById('aupContent');
+  if (aupEl) aupEl.innerHTML = currentLang === 'fi'
+    ? `<p style="margin-bottom:8px">Käyttämällä Agentic Idea Discovery -sovellusta sitoudut seuraaviin ehtoihin:</p>
+      <ul style="padding-left:16px;margin-bottom:8px">
+        <li><strong>Älä yritä väärinkäyttää järjestelmää</strong> — älä syötä haitallisia komentoja, koodia tai prompt injection -yrityksiä ideakenttään.</li>
+        <li><strong>Älä yritä murtautua</strong> — järjestelmän tietoturvan testaaminen, Firestore-datan manipulointi tai agentin ohjauskomentojen kiertäminen on kiellettyä.</li>
+        <li><strong>Kunnioita muita käyttäjiä</strong> — älä esiinny toisena henkilönä, älä muokkaa toisten ideoita, älä lähetä loukkaavaa tai häiritsevää sisältöä.</li>
+        <li><strong>Käytä resursseja vastuullisesti</strong> — älä kuormita järjestelmää tarkoituksellisesti tai luo turhaa massakuormaa.</li>
+        <li><strong>Ideat ovat julkisia</strong> — kaikki syöttämäsi ideat ja viestit näkyvät muille käyttäjille ja AI-agenteille. Älä jaa luottamuksellista tietoa.</li>
+      </ul>
+      <p style="color:#64748b;font-style:italic">Rikkomukset johtavat käyttäjätilin automaattiseen estämiseen. AI-agentit tarkistavat jokaisen idean turvallisuuden ennen toteutusta.</p>`
+    : `<p style="margin-bottom:8px">By using Agentic Idea Discovery, you agree to the following terms:</p>
+      <ul style="padding-left:16px;margin-bottom:8px">
+        <li><strong>Do not misuse the system</strong> — do not enter harmful commands, code, or prompt injection attempts in the idea field.</li>
+        <li><strong>Do not attempt to hack</strong> — security testing, Firestore data manipulation, or bypassing agent control commands is prohibited.</li>
+        <li><strong>Respect other users</strong> — do not impersonate others, modify their ideas, or submit offensive or harassing content.</li>
+        <li><strong>Use resources responsibly</strong> — do not intentionally overload the system or create unnecessary mass load.</li>
+        <li><strong>Ideas are public</strong> — all ideas and messages you submit are visible to other users and AI agents. Do not share confidential information.</li>
+      </ul>
+      <p style="color:#64748b;font-style:italic">Violations result in automatic account suspension. AI agents verify the safety of every idea before implementation.</p>`;
 
   attr('ideaText', 'placeholder', t('ideaPlaceholder'));
   if (!document.getElementById('submitBtn').disabled) el('submitBtn', t('submitBtn'));
@@ -1319,6 +1404,7 @@ function switchTab(tab) {
   document.getElementById('tabKanban').style.display = tab === 'kanban' ? '' : 'none';
   document.getElementById('tabHelp').style.display = tab === 'help' ? '' : 'none';
   document.getElementById('tabSlides').style.display = tab === 'slides' ? '' : 'none';
+  document.getElementById('tabInvite').style.display = tab === 'invite' ? '' : 'none';
   document.getElementById('tabDocs').style.display = tab === 'docs' ? '' : 'none';
   if (tab === 'help') renderHelp();
   if (tab === 'slides') renderSlides();
@@ -2013,6 +2099,50 @@ async function editAppUrl(ideaId) {
     console.error('editAppUrl:', e);
     showToast(t('toastError'));
   }
+}
+
+function toggleHeaderAup() {
+  const popup = document.getElementById('headerAupPopup');
+  const visible = popup.style.display !== 'none';
+  popup.style.display = visible ? 'none' : 'block';
+  if (!visible) {
+    const content = document.getElementById('headerAupContent');
+    content.innerHTML = currentLang === 'fi'
+      ? `<p style="margin-bottom:8px">Käyttämällä Agentic Idea Discovery -sovellusta sitoudut seuraaviin ehtoihin:</p>
+        <ul style="padding-left:16px;margin-bottom:8px">
+          <li><strong>Älä yritä väärinkäyttää järjestelmää</strong> — älä syötä haitallisia komentoja, koodia tai prompt injection -yrityksiä ideakenttään.</li>
+          <li><strong>Älä yritä murtautua</strong> — järjestelmän tietoturvan testaaminen, Firestore-datan manipulointi tai agentin ohjauskomentojen kiertäminen on kiellettyä.</li>
+          <li><strong>Kunnioita muita käyttäjiä</strong> — älä esiinny toisena henkilönä, älä muokkaa toisten ideoita, älä lähetä loukkaavaa tai häiritsevää sisältöä.</li>
+          <li><strong>Käytä resursseja vastuullisesti</strong> — älä kuormita järjestelmää tarkoituksellisesti tai luo turhaa massakuormaa.</li>
+          <li><strong>Ideat ovat julkisia</strong> — kaikki syöttämäsi ideat ja viestit näkyvät muille käyttäjille ja AI-agenteille. Älä jaa luottamuksellista tietoa.</li>
+        </ul>
+        <p style="color:#64748b;font-style:italic">Rikkomukset johtavat käyttäjätilin automaattiseen estämiseen.</p>`
+      : `<p style="margin-bottom:8px">By using Agentic Idea Discovery, you agree to the following terms:</p>
+        <ul style="padding-left:16px;margin-bottom:8px">
+          <li><strong>Do not misuse the system</strong> — do not enter harmful commands, code, or prompt injection attempts in the idea field.</li>
+          <li><strong>Do not attempt to hack</strong> — security testing, Firestore data manipulation, or bypassing agent control commands is prohibited.</li>
+          <li><strong>Respect other users</strong> — do not impersonate others, modify their ideas, or submit offensive or harassing content.</li>
+          <li><strong>Use resources responsibly</strong> — do not intentionally overload the system or create unnecessary mass load.</li>
+          <li><strong>Ideas are public</strong> — all ideas and messages you submit are visible to other users and AI agents. Do not share confidential information.</li>
+        </ul>
+        <p style="color:#64748b;font-style:italic">Violations result in automatic account suspension.</p>`;
+    document.getElementById('headerAupClose').textContent = currentLang === 'fi' ? 'Sulje' : 'Close';
+  }
+}
+
+function generateInviteFromTab() {
+  const name = document.getElementById('inviteTabNameInput').value.trim();
+  if (!name) { showToast(currentLang === 'fi' ? 'Anna nimi' : 'Enter a name'); return; }
+  const base = window.location.origin + window.location.pathname;
+  const url = `${base}?name=${encodeURIComponent(name)}`;
+  document.getElementById('inviteTabUrlText').textContent = url;
+  document.getElementById('inviteTabResult').style.display = '';
+}
+
+function copyInviteFromTab() {
+  const url = document.getElementById('inviteTabUrlText').textContent;
+  navigator.clipboard.writeText(url).then(() =>
+    showToast(currentLang === 'fi' ? 'Linkki kopioitu' : 'Link copied'));
 }
 
 function generateInviteUrl() {
@@ -3288,6 +3418,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     document.getElementById('userBadge').textContent = name;
     document.getElementById('userBadge').style.display = '';
     document.getElementById('logoutBtn').style.display = '';
+    document.getElementById('aupHeaderBtn').style.display = '';
 
     if (CATEGORY !== 'default') {
       document.getElementById('headerCategory').textContent = CATEGORY;
@@ -3332,6 +3463,8 @@ function logout() {
   document.getElementById('headerRoleBadge').style.display = 'none';
   document.getElementById('langToggle').style.display = 'none';
   document.getElementById('logoutBtn').style.display = 'none';
+  document.getElementById('aupHeaderBtn').style.display = 'none';
+  document.getElementById('headerAupPopup').style.display = 'none';
   document.getElementById('presenceBtn').style.display = 'none';
   document.getElementById('blockedBanner').style.display = 'none';
   document.getElementById('ideaText').disabled = false;
