@@ -78,7 +78,23 @@ cp "$SRC/PUBLISH.md" "$GL/PUBLISH.md"
 cp "$SRC/CLAUDE.md" "$GL/CLAUDE.md"
 ```
 
-## Vaihe 3: Git push GitHub Pages -repoon
+## Vaihe 3: Kopioi Worker-agentin MD-tiedostot Site_Tour-hakemistoon
+
+```bash
+WORKER_MD="/Users/tapio.pitkaranta/Documents/Gitlab/rapid-agent-prototypes/Site_Tour/Worker_agent_MD_Files"
+mkdir -p "$WORKER_MD"
+
+cp "$SRC/AGENT_SAFETY.md" "$WORKER_MD/AGENT_SAFETY.md"
+cp "$SRC/AGENT_FETCH_IDEAS.md" "$WORKER_MD/AGENT_FETCH_IDEAS.md"
+cp "$SRC/AGENT_IMPLEMENT.md" "$WORKER_MD/AGENT_IMPLEMENT.md"
+cp "$SRC/AGENT_STATUS.md" "$WORKER_MD/AGENT_STATUS.md"
+cp "$SRC/_agent.js" "$WORKER_MD/_agent.js"
+```
+
+Worker-agentit toimivat hakemistoissa kuten `Site_Tour/Helsinki_20260429_0623_124/`
+ja viittaavat näihin tiedostoihin polulla `../Worker_agent_MD_Files/`.
+
+## Vaihe 4: Git push GitHub Pages -repoon
 
 ```bash
 cd /Users/tapio.pitkaranta/Documents/GitHub/agentic-discovery
@@ -87,16 +103,16 @@ git commit -m "Publish: Agentic Idea Discovery update"
 git push
 ```
 
-## Vaihe 4: Git push GitLab-repoon
+## Vaihe 5: Git push GitLab-repoon
 
 ```bash
 cd /Users/tapio.pitkaranta/Documents/Gitlab/rapid-agent-prototypes
-git add agentic-discovery/
+git add agentic-discovery/ Site_Tour/Worker_agent_MD_Files/
 git commit -m "Publish: Agentic Idea Discovery update"
 git push
 ```
 
-## Vaihe 5: Raportoi muutokset
+## Vaihe 6: Raportoi muutokset
 
 Tulosta käyttäjälle:
 1. Mitkä tiedostot kopioitiin
@@ -113,4 +129,4 @@ Tulosta käyttäjälle:
 
 ## Pikakomento
 
-Kun käyttäjä sanoo **"julkaise"**, aja vaiheet 1-5 ja raportoi.
+Kun käyttäjä sanoo **"julkaise"**, aja vaiheet 1-6 ja raportoi.
