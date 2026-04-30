@@ -2322,7 +2322,7 @@ function renderSlidePanel() {
 // ── Slides ──
 
 let currentSlide = 0;
-const TOTAL_SLIDES = 7;
+const TOTAL_SLIDES = 8;
 
 document.addEventListener('keydown', (e) => {
   if (document.getElementById('tabSlides').style.display === 'none') return;
@@ -2344,29 +2344,36 @@ function renderSlides() {
   const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrUrl)}&bgcolor=ffffff&color=4338ca`;
 
   const slides = [
-    // Slide 0: Title + QR + Three-layer model
-    `<div style="padding:32px 20px">
-      <div style="text-align:center;margin-bottom:28px">
-        <div style="font-size:42px;margin-bottom:8px">🦄🧙‍♂️🤖</div>
-        <h1 style="font-size:30px;font-weight:800;color:var(--text);margin-bottom:6px">What is Agentic Discovery?</h1>
-        <p style="font-size:16px;color:var(--text-light);max-width:520px;margin:0 auto">From wild ideas to live apps — powered by humans and AI agents working together</p>
+    // Slide 0: Title + QR
+    `<div style="text-align:center;padding:48px 20px">
+      <div style="font-size:56px;margin-bottom:20px">🦄🧙‍♂️🤖</div>
+      <h1 style="font-size:34px;font-weight:800;color:var(--text);margin-bottom:10px;line-height:1.2">What is Agentic Discovery?</h1>
+      <p style="font-size:18px;color:var(--text-light);max-width:520px;margin:0 auto 32px;line-height:1.5">From wild ideas to live apps — powered by humans and AI agents working together</p>
+      <div style="display:inline-block;padding:16px;background:white;border-radius:16px;border:2px solid #c7d2fe;box-shadow:0 4px 16px rgba(67,56,202,0.1)">
+        <img src="${qrImg}" alt="QR Code" style="width:180px;height:180px;display:block;border-radius:8px">
+        <div style="margin-top:10px;font-size:12px;color:var(--primary);font-weight:600">longshoreforrest.github.io/agentic-discovery</div>
+      </div>
+      <div style="margin-top:24px;font-size:14px;color:var(--text-light)">Scan to try it live</div>
+    </div>`,
+
+    // Slide 1: Three-layer modernization model
+    `<div style="padding:28px 20px">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:28px;font-weight:800;color:var(--text)">🎯 Three-Layer Modernization Model</div>
+        <div style="font-size:15px;color:var(--text-light);margin-top:6px">Agentic Discovery operates in the outer layer — extending, not replacing</div>
       </div>
       <div style="display:flex;gap:28px;align-items:center;justify-content:center;flex-wrap:wrap">
-        <!-- Three-layer concentric circles -->
+        <!-- Concentric circles -->
         <div style="position:relative;width:280px;height:280px;flex-shrink:0">
-          <!-- Outer ring -->
-          <div style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 30% 30%,#E8F5E9,#C8E6C9);border:3px solid #4CAF50;display:flex;align-items:center;justify-content:center">
+          <div style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 30% 30%,#E8F5E9,#C8E6C9);border:3px solid #4CAF50">
             <div style="position:absolute;top:6px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;color:#2E7D32;text-align:center;line-height:1.3;white-space:nowrap">OUTER LAYER<br><span style="font-weight:400;font-size:10px">Agentic Discovery</span></div>
           </div>
-          <!-- Middle ring -->
           <div style="position:absolute;top:11%;left:11%;width:78%;height:78%;border-radius:50%;background:radial-gradient(circle at 30% 30%,#FFF3E0,#FFE0B2);border:3px solid #FF9800">
             <div style="position:absolute;top:6px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;color:#E65100;text-align:center;line-height:1.3;white-space:nowrap">MIDDLE LAYER<br><span style="font-weight:400;font-size:10px">Integration</span></div>
           </div>
-          <!-- Inner core -->
           <div style="position:absolute;top:32%;left:32%;width:36%;height:36%;border-radius:50%;background:radial-gradient(circle at 30% 30%,#E3F2FD,#BBDEFB);border:3px solid #1565C0;display:flex;align-items:center;justify-content:center">
             <div style="font-size:11px;font-weight:700;color:#1565C0;text-align:center;line-height:1.3">CORE<br><span style="font-weight:400;font-size:10px">Legacy IT</span></div>
           </div>
-          <!-- Arrows -->
           <div style="position:absolute;right:6%;top:50%;transform:translateY(-50%);font-size:22px;color:#E65100;opacity:0.6">◀</div>
           <div style="position:absolute;left:6%;top:50%;transform:translateY(-50%);font-size:22px;color:#2E7D32;opacity:0.6">▶</div>
         </div>
@@ -2386,16 +2393,9 @@ function renderSlides() {
           </div>
         </div>
       </div>
-      <!-- QR code -->
-      <div style="text-align:center;margin-top:24px">
-        <div style="display:inline-block;padding:12px;background:white;border-radius:14px;border:2px solid #c7d2fe;box-shadow:0 4px 12px rgba(67,56,202,0.08)">
-          <img src="${qrImg}" alt="QR Code" style="width:120px;height:120px;display:block;border-radius:6px">
-          <div style="margin-top:6px;font-size:11px;color:var(--primary);font-weight:600">Scan to try it live</div>
-        </div>
-      </div>
     </div>`,
 
-    // Slide 1: The Problem
+    // Slide 2: The Problem
     `<div style="padding:20px">
       <div style="text-align:center;margin-bottom:24px">
         <div style="font-size:28px;font-weight:800;color:var(--text)">🤔 The Problem</div>
