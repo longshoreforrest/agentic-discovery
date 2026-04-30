@@ -2578,9 +2578,13 @@ function hasPendingUserMessages(idea) {
 function renderKanban(filtered) {
   const newIdeas = filtered.filter(i => i.status === 'new');
   const allInProgress = filtered.filter(i => i.status === 'in-progress');
-  const pending = allInProgress.filter(hasPendingUserMessages);
+  const allDone = filtered.filter(i => i.status === 'done' || i.status === 'blocked');
+  const pending = [
+    ...allInProgress.filter(hasPendingUserMessages),
+    ...allDone.filter(hasPendingUserMessages)
+  ];
   const inProgress = allInProgress.filter(i => !hasPendingUserMessages(i));
-  const done = filtered.filter(i => i.status === 'done' || i.status === 'blocked');
+  const done = allDone.filter(i => !hasPendingUserMessages(i));
 
   const el = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
   el('kanbanCountNew', newIdeas.length);
