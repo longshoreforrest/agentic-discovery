@@ -812,6 +812,24 @@ body {
           </div>
         </div>
 
+        <!-- Invite URL generator -->
+        <div style="margin-bottom:20px;padding:16px 20px;background:linear-gradient(135deg,#eff6ff,#e0e7ff);border:1.5px solid #93c5fd;border-radius:14px">
+          <div style="font-size:15px;font-weight:700;color:#1e40af;margin-bottom:8px">🔗 Kutsu-URL / Invite Link</div>
+          <div style="font-size:13px;color:var(--text-light);line-height:1.6;margin-bottom:10px">
+            Luo suora kirjautumislinkki käyttäjälle. Linkin avaaja kirjautuu automaattisesti annetulla nimellä.
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="text" id="inviteNameInput" placeholder="Etunimi Sukunimi" style="padding:8px 12px;border:1.5px solid #c7d2fe;border-radius:8px;font-size:13px;font-family:inherit;flex:1;min-width:180px;outline:none;transition:border 0.15s" onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#c7d2fe'">
+            <button onclick="generateInviteUrl()" style="padding:8px 16px;background:#4f46e5;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;white-space:nowrap" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">Luo linkki</button>
+          </div>
+          <div id="inviteUrlResult" style="display:none;margin-top:10px">
+            <div style="display:flex;gap:6px;align-items:center">
+              <code id="inviteUrlText" style="flex:1;background:white;padding:8px 12px;border-radius:8px;border:1px solid #e5e7eb;font-size:12px;word-break:break-all;color:#4338ca"></code>
+              <button onclick="copyInviteUrl()" style="flex-shrink:0;padding:8px 10px;background:white;border:1.5px solid #c7d2fe;border-radius:8px;font-size:16px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='#4f46e5';this.style.background='#f5f3ff'" onmouseout="this.style.borderColor='#c7d2fe';this.style.background='white'" title="Kopioi linkki">📋</button>
+            </div>
+          </div>
+        </div>
+
         <h2 id="docsTitle" style="font-size:20px;font-weight:700;margin-bottom:4px;color:var(--text)">Työnkulku</h2>
         <p id="docsSubtitle" style="font-size:13px;color:var(--text-light);margin-bottom:16px">Klikkaa kaavion vaihetta nähdäksesi lisätietoja</p>
 
@@ -1995,6 +2013,21 @@ async function editAppUrl(ideaId) {
     console.error('editAppUrl:', e);
     showToast(t('toastError'));
   }
+}
+
+function generateInviteUrl() {
+  const name = document.getElementById('inviteNameInput').value.trim();
+  if (!name) { showToast(currentLang === 'fi' ? 'Anna nimi' : 'Enter a name'); return; }
+  const base = window.location.origin + window.location.pathname;
+  const url = `${base}?name=${encodeURIComponent(name)}`;
+  document.getElementById('inviteUrlText').textContent = url;
+  document.getElementById('inviteUrlResult').style.display = '';
+}
+
+function copyInviteUrl() {
+  const url = document.getElementById('inviteUrlText').textContent;
+  navigator.clipboard.writeText(url).then(() =>
+    showToast(currentLang === 'fi' ? 'Linkki kopioitu' : 'Link copied'));
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -3224,6 +3257,12 @@ function renderAll() {
 
 const saved = localStorage.getItem('ideaagent_username');
 if (saved) document.getElementById('loginName').value = saved;
+
+const urlName = new URLSearchParams(window.location.search).get('name');
+if (urlName && urlName.trim()) {
+  document.getElementById('loginName').value = urlName.trim();
+  setTimeout(() => document.getElementById('loginForm').dispatchEvent(new Event('submit')), 100);
+}
 
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
   e.preventDefault();
