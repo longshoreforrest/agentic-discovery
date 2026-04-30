@@ -778,6 +778,7 @@ body {
       <button class="main-tab" data-tab="slides" onclick="switchTab('slides')">🎬 Slides</button>
       <button class="main-tab" data-tab="invite" onclick="switchTab('invite')">💌 Kutsu kaveri</button>
       <button class="main-tab" data-tab="apps" onclick="switchTab('apps')" id="tabAppsBtn">🚀 Kaikki Sovellusaihiot</button>
+      <button class="main-tab" data-tab="analytics" onclick="switchTab('analytics')">📊 Analytiikka</button>
       <button class="main-tab" data-tab="docs" onclick="switchTab('docs')">📖 Dokumentaatio</button>
     </div>
 
@@ -990,6 +991,51 @@ body {
         </div>
       </div>
     </div><!-- /tabApps -->
+
+    <!-- Tab: Analytiikka -->
+    <div id="tabAnalytics" style="display:none">
+      <div class="docs-section">
+        <div style="margin-bottom:20px;padding:20px 24px;background:linear-gradient(135deg,#eff6ff,#f0fdf4);border:1.5px solid #93c5fd;border-radius:14px">
+          <div style="font-size:18px;font-weight:700;color:#1e40af;margin-bottom:4px" id="analyticsTitle">📊 Site Tour 2026 — Analytiikka</div>
+          <p style="font-size:13px;color:#475569" id="analyticsSubtitle">Reaaliaikainen yhteenveto Tourin aikana syntyneistä ideoista ja sovelluksista</p>
+        </div>
+
+        <!-- KPI cards -->
+        <div id="analyticsKpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:20px"></div>
+
+        <!-- City filter -->
+        <div style="margin-bottom:16px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+          <span style="font-size:13px;font-weight:600;color:#475569;margin-right:4px" id="analyticsCityLabel">📍 Toimipiste:</span>
+          <div id="analyticsCityFilters" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        </div>
+
+        <!-- Charts area -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;margin-bottom:20px">
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:16px">
+            <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:12px" id="chartStatusTitle">📋 Tikettien status</div>
+            <div id="chartStatus"></div>
+          </div>
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:16px">
+            <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:12px" id="chartCityTitle">🏙️ Ideat per toimipiste</div>
+            <div id="chartCity"></div>
+          </div>
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:16px">
+            <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:12px" id="chartAuthorsTitle">👤 Aktiivisimmat ideoijat</div>
+            <div id="chartAuthors"></div>
+          </div>
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:16px">
+            <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:12px" id="chartMsgsTitle">💬 Viestit per tiketti (top 10)</div>
+            <div id="chartMsgs"></div>
+          </div>
+        </div>
+
+        <!-- Idea table -->
+        <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:16px;overflow-x:auto">
+          <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:12px" id="tableTitle">📋 Kaikki ideat</div>
+          <div id="analyticsTable"></div>
+        </div>
+      </div>
+    </div><!-- /tabAnalytics -->
 
     <!-- Tab: Dokumentaatio -->
     <div id="tabDocs" style="display:none">
@@ -1221,6 +1267,7 @@ const i18n = {
     tabSlides: '🎬 Slides',
     tabInvite: '💌 Kutsu kaveri',
     tabApps: '🚀 Kaikki Sovellusaihiot',
+    tabAnalytics: '📊 Analytiikka',
     tabDocs: '📖 Dokumentaatio',
     ideaPlaceholder: 'Kuvaile ideasi tähän... Voit kirjoittaa millä tahansa kielellä tai käyttää mikrofonia puhuaksesi suomeksi tai englanniksi.',
     submitBtn: 'Lähetä idea',
@@ -1338,6 +1385,7 @@ const i18n = {
     tabSlides: '🎬 Slides',
     tabInvite: '💌 Invite a friend',
     tabApps: '🚀 All App Prototypes',
+    tabAnalytics: '📊 Analytics',
     tabDocs: '📖 Documentation',
     ideaPlaceholder: 'Describe your idea here... You can write in any language or use the microphone to speak in Finnish or English.',
     submitBtn: 'Submit idea',
@@ -1477,6 +1525,7 @@ function applyStaticTranslations() {
   document.querySelector('[data-tab="slides"]').textContent = t('tabSlides');
   document.querySelector('[data-tab="invite"]').textContent = t('tabInvite');
   document.querySelector('[data-tab="apps"]').textContent = t('tabApps');
+  document.querySelector('[data-tab="analytics"]').textContent = t('tabAnalytics');
   document.querySelector('[data-tab="docs"]').textContent = t('tabDocs');
 
   el('inviteTitle', currentLang === 'fi' ? 'Kutsu kaveri mukaan' : 'Invite a friend');
@@ -1599,7 +1648,9 @@ function switchTab(tab) {
   document.getElementById('tabSlides').style.display = tab === 'slides' ? '' : 'none';
   document.getElementById('tabInvite').style.display = tab === 'invite' ? '' : 'none';
   document.getElementById('tabApps').style.display = tab === 'apps' ? '' : 'none';
+  document.getElementById('tabAnalytics').style.display = tab === 'analytics' ? '' : 'none';
   document.getElementById('tabDocs').style.display = tab === 'docs' ? '' : 'none';
+  if (tab === 'analytics') renderAnalytics();
   if (tab === 'help') renderHelp();
   if (tab === 'slides') renderSlides();
 }
@@ -2916,6 +2967,136 @@ function renderSlidePanel() {
 }
 
 // ══════════════════════════════════════════════════════════════
+// ── Analytics ──
+
+let analyticsCityFilter = 'all';
+
+function getCityFromIdea(idea) {
+  const dir = idea.gitDir || defaultGitDir(idea.ideaId);
+  const m = dir.match(/^([A-ZÄÖÅa-zäöå]+?)_/);
+  return m ? m[1] : 'Helsinki';
+}
+
+function renderAnalytics() {
+  const src = analyticsCityFilter === 'all' ? ideas : ideas.filter(i => getCityFromIdea(i) === analyticsCityFilter);
+
+  const cities = {};
+  ideas.forEach(i => { const c = getCityFromIdea(i); cities[c] = (cities[c] || 0) + 1; });
+
+  const totalIdeas = src.length;
+  const totalDone = src.filter(i => i.status === 'done').length;
+  const totalMsgs = src.reduce((s, i) => s + (i.messages || []).length, 0);
+  const totalAuthors = new Set(src.map(i => i.author)).size;
+  const totalCities = Object.keys(cities).length;
+
+  document.getElementById('analyticsKpis').innerHTML = [
+    { label: currentLang === 'fi' ? 'Ideat' : 'Ideas', value: totalIdeas, color: '#3b82f6', icon: '💡' },
+    { label: currentLang === 'fi' ? 'Toteutettu' : 'Completed', value: totalDone, color: '#22c55e', icon: '✅' },
+    { label: currentLang === 'fi' ? 'Viestejä' : 'Messages', value: totalMsgs, color: '#f59e0b', icon: '💬' },
+    { label: currentLang === 'fi' ? 'Ideoijia' : 'Contributors', value: totalAuthors, color: '#8b5cf6', icon: '👤' },
+    { label: currentLang === 'fi' ? 'Toimipisteet' : 'Offices', value: totalCities, color: '#ec4899', icon: '📍' },
+  ].map(k => `<div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:16px;text-align:center">
+    <div style="font-size:28px">${k.icon}</div>
+    <div style="font-size:28px;font-weight:800;color:${k.color}">${k.value}</div>
+    <div style="font-size:12px;color:#64748b;font-weight:600">${k.label}</div>
+  </div>`).join('');
+
+  const cityKeys = Object.keys(cities).sort();
+  document.getElementById('analyticsCityFilters').innerHTML =
+    `<button onclick="analyticsCityFilter='all';renderAnalytics()" style="padding:4px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid ${analyticsCityFilter === 'all' ? '#3b82f6' : '#e2e8f0'};background:${analyticsCityFilter === 'all' ? '#eff6ff' : 'white'};color:${analyticsCityFilter === 'all' ? '#2563eb' : '#64748b'};font-family:inherit">${currentLang === 'fi' ? 'Kaikki' : 'All'}</button>` +
+    cityKeys.map(c => `<button onclick="analyticsCityFilter='${c}';renderAnalytics()" style="padding:4px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid ${analyticsCityFilter === c ? '#3b82f6' : '#e2e8f0'};background:${analyticsCityFilter === c ? '#eff6ff' : 'white'};color:${analyticsCityFilter === c ? '#2563eb' : '#64748b'};font-family:inherit">${c} (${cities[c]})</button>`).join('');
+
+  // Status chart
+  const statuses = { new: 0, 'in-progress': 0, done: 0, blocked: 0 };
+  src.forEach(i => { statuses[i.status] = (statuses[i.status] || 0) + 1; });
+  const statusColors = { new: '#3b82f6', 'in-progress': '#f59e0b', done: '#22c55e', blocked: '#ef4444' };
+  const statusLabels = { new: currentLang === 'fi' ? 'Uudet' : 'New', 'in-progress': currentLang === 'fi' ? 'Työn alla' : 'In progress', done: currentLang === 'fi' ? 'Valmis' : 'Done', blocked: currentLang === 'fi' ? 'Estetty' : 'Blocked' };
+  const maxStatus = Math.max(...Object.values(statuses), 1);
+  document.getElementById('chartStatus').innerHTML = Object.entries(statuses).filter(([,v]) => v > 0).map(([k, v]) =>
+    `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <span style="font-size:12px;color:#64748b;width:80px;text-align:right">${statusLabels[k]}</span>
+      <div style="flex:1;height:24px;background:#f1f5f9;border-radius:6px;overflow:hidden">
+        <div style="height:100%;width:${(v/maxStatus)*100}%;background:${statusColors[k]};border-radius:6px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:11px;font-weight:700;color:white;min-width:24px">${v}</div>
+      </div>
+    </div>`).join('');
+
+  // City chart
+  const cityData = {};
+  src.forEach(i => { const c = getCityFromIdea(i); cityData[c] = (cityData[c] || 0) + 1; });
+  const maxCity = Math.max(...Object.values(cityData), 1);
+  const cityColors = ['#3b82f6','#22c55e','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#f97316'];
+  document.getElementById('chartCity').innerHTML = Object.entries(cityData).sort((a,b) => b[1]-a[1]).map(([c, v], i) =>
+    `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <span style="font-size:12px;color:#64748b;width:80px;text-align:right">${c}</span>
+      <div style="flex:1;height:24px;background:#f1f5f9;border-radius:6px;overflow:hidden">
+        <div style="height:100%;width:${(v/maxCity)*100}%;background:${cityColors[i % cityColors.length]};border-radius:6px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:11px;font-weight:700;color:white;min-width:24px">${v}</div>
+      </div>
+    </div>`).join('');
+
+  // Top authors
+  const authors = {};
+  src.forEach(i => { authors[i.author] = (authors[i.author] || 0) + 1; });
+  const topAuthors = Object.entries(authors).sort((a,b) => b[1]-a[1]).slice(0, 8);
+  const maxAuthor = Math.max(...topAuthors.map(a => a[1]), 1);
+  document.getElementById('chartAuthors').innerHTML = topAuthors.map(([name, v]) =>
+    `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <span style="font-size:12px;color:#64748b;width:100px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(name.split(' ')[0])}</span>
+      <div style="flex:1;height:24px;background:#f1f5f9;border-radius:6px;overflow:hidden">
+        <div style="height:100%;width:${(v/maxAuthor)*100}%;background:#8b5cf6;border-radius:6px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:11px;font-weight:700;color:white;min-width:24px">${v}</div>
+      </div>
+    </div>`).join('');
+
+  // Top messages per ticket
+  const msgData = src.filter(i => (i.messages || []).length > 1).sort((a,b) => (b.messages||[]).length - (a.messages||[]).length).slice(0, 10);
+  const maxMsgs = Math.max(...msgData.map(i => (i.messages||[]).length), 1);
+  document.getElementById('chartMsgs').innerHTML = msgData.length === 0
+    ? `<div style="color:#94a3b8;font-size:13px;padding:8px">${currentLang === 'fi' ? 'Ei dataa' : 'No data'}</div>`
+    : msgData.map(i => {
+      const label = (i.agentSummary || i.text || i.ideaId).substring(0, 25);
+      const v = (i.messages||[]).length;
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-size:11px;color:#64748b;width:110px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(i.text || '')}">${esc(label)}</span>
+        <div style="flex:1;height:22px;background:#f1f5f9;border-radius:6px;overflow:hidden">
+          <div style="height:100%;width:${(v/maxMsgs)*100}%;background:#06b6d4;border-radius:6px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:11px;font-weight:700;color:white;min-width:22px">${v}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+  // Table
+  const rows = src.sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||'')).map(i => {
+    const sc = { new: '#3b82f6', 'in-progress': '#f59e0b', done: '#22c55e', blocked: '#ef4444' }[i.status] || '#94a3b8';
+    const sl = statusLabels[i.status] || i.status;
+    const msgs = (i.messages || []).length;
+    const userMsgs = (i.messages || []).filter(m => m.role === 'user').length;
+    const agentMsgs = (i.messages || []).filter(m => m.role === 'agent').length;
+    const city = getCityFromIdea(i);
+    const preview = (i.agentSummary || i.text || '').substring(0, 50);
+    return `<tr style="border-bottom:1px solid #f1f5f9">
+      <td style="padding:6px 8px;font-size:12px;color:#64748b;white-space:nowrap">${city}</td>
+      <td style="padding:6px 8px;font-size:12px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(i.author)}</td>
+      <td style="padding:6px 8px;font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(i.text || '')}">${esc(preview)}</td>
+      <td style="padding:6px 8px"><span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;background:${sc}20;color:${sc}">${sl}</span></td>
+      <td style="padding:6px 8px;font-size:12px;text-align:center">${userMsgs}</td>
+      <td style="padding:6px 8px;font-size:12px;text-align:center">${agentMsgs}</td>
+      <td style="padding:6px 8px;font-size:12px;color:#64748b;white-space:nowrap">${formatDateTime(i.createdAt)}</td>
+    </tr>`;
+  }).join('');
+
+  const thStyle = 'padding:8px;font-size:11px;font-weight:700;color:#475569;text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap';
+  document.getElementById('analyticsTable').innerHTML = `<table style="width:100%;border-collapse:collapse">
+    <thead><tr>
+      <th style="${thStyle}">📍</th>
+      <th style="${thStyle}">${currentLang === 'fi' ? 'Ideoija' : 'Author'}</th>
+      <th style="${thStyle}">${currentLang === 'fi' ? 'Idea' : 'Idea'}</th>
+      <th style="${thStyle}">Status</th>
+      <th style="${thStyle};text-align:center">👤</th>
+      <th style="${thStyle};text-align:center">🤖</th>
+      <th style="${thStyle}">${currentLang === 'fi' ? 'Luotu' : 'Created'}</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
 // ── Help tab ──
 // ══════════════════════════════════════════════════════════════
 
