@@ -25,15 +25,19 @@ Lähde: `/Users/tapio.pitkaranta/Documents/GitHub/RapidPrototypes/ClaudeCode/Ide
 | `AGENT_FETCH_IDEAS.md` | Ideoiden hakuohje |
 | `AGENT_IMPLEMENT.md` | Toteutusohje |
 | `AGENT_STATUS.md` | Statuskirjoitusohje |
-| `CLAUDE.md` | Claude Code -ohjaustiedosto |
 | `FIREBASE_SETUP.md` | Firebase-pystytysohje |
 | `ADMIN_CATEGORIES.md` | Kategorioiden hallinta |
 | `ADMIN_DEPLOY.md` | Deploy-ohje |
 | `PUBLISH.md` | Tämä julkaisuohje |
 
+**Huom:** GitHub Pages -kohteeseen EI kopioida `CLAUDE.md` — se on kehitysympäristökohtainen.
+
 ### GitLab-kohteeseen kopioidaan:
 
-Samat tiedostot PAITSI:
+Samat tiedostot kuin yllä, PLUS:
+- `CLAUDE.md` (Claude Code -ohjaustiedosto)
+
+PAITSI:
 - **EI** `ClaudeCode_Prompts.md` (rakentamisen lokitiedosto, ei kuulu julkaisuun)
 - **EI** `package.json`, `package-lock.json` (ei tarvita tuotannossa)
 - **EI** `firebase.json`, `firestore.rules` (Firebase-konfiguraatio, ei julkaista)
@@ -50,7 +54,6 @@ cp "$SRC/AGENT_SAFETY.md" "$GH/AGENT_SAFETY.md"
 cp "$SRC/AGENT_FETCH_IDEAS.md" "$GH/AGENT_FETCH_IDEAS.md"
 cp "$SRC/AGENT_IMPLEMENT.md" "$GH/AGENT_IMPLEMENT.md"
 cp "$SRC/AGENT_STATUS.md" "$GH/AGENT_STATUS.md"
-cp "$SRC/CLAUDE.md" "$GH/CLAUDE.md"
 cp "$SRC/FIREBASE_SETUP.md" "$GH/FIREBASE_SETUP.md"
 cp "$SRC/ADMIN_CATEGORIES.md" "$GH/ADMIN_CATEGORIES.md"
 cp "$SRC/ADMIN_DEPLOY.md" "$GH/ADMIN_DEPLOY.md"
@@ -72,10 +75,8 @@ cp "$SRC/FIREBASE_SETUP.md" "$GL/FIREBASE_SETUP.md"
 cp "$SRC/ADMIN_CATEGORIES.md" "$GL/ADMIN_CATEGORIES.md"
 cp "$SRC/ADMIN_DEPLOY.md" "$GL/ADMIN_DEPLOY.md"
 cp "$SRC/PUBLISH.md" "$GL/PUBLISH.md"
+cp "$SRC/CLAUDE.md" "$GL/CLAUDE.md"
 ```
-
-**Huom:** GitLab-kohteeseen EI kopioida `CLAUDE.md` eikä `ClaudeCode_Prompts.md`
-koska ne sisältävät kehitysympäristökohtaisia ohjeita.
 
 ## Vaihe 3: Git push GitHub Pages -repoon
 

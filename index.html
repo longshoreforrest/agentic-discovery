@@ -638,9 +638,9 @@ body {
     <h1>Agentic Idea Discovery</h1>
     <p class="subtitle" id="loginSubtitle">Kerro ideasi — me toteutamme sen</p>
     <form id="loginForm">
-      <input type="text" id="loginName" placeholder="Nimesi tai nimimerkki" autocomplete="name" required>
+      <input type="text" id="loginName" placeholder="Nimesi: Etunimi Sukunimi" autocomplete="name" required>
       <button type="submit" id="loginBtn">Aloita</button>
-      <div class="login-error" id="loginError">Anna nimi tai nimimerkki.</div>
+      <div class="login-error" id="loginError">Anna nimesi: Etunimi Sukunimi.</div>
     </form>
   </div>
 </div>
@@ -939,9 +939,9 @@ let currentLang = localStorage.getItem('ideaagent_lang') || 'fi';
 const i18n = {
   fi: {
     loginSubtitle: 'Kerro ideasi — me toteutamme sen',
-    loginPlaceholder: 'Nimesi tai nimimerkki',
+    loginPlaceholder: 'Nimesi: Etunimi Sukunimi',
     loginBtn: 'Aloita',
-    loginError: 'Anna nimi tai nimimerkki.',
+    loginError: 'Anna nimesi: Etunimi Sukunimi.',
     loginLoading: 'Ladataan...',
     logout: 'Ulos',
     presenceHeader: 'Kirjautuneet käyttäjät',
@@ -1048,9 +1048,9 @@ const i18n = {
   },
   en: {
     loginSubtitle: 'Share your idea — we build it',
-    loginPlaceholder: 'Your name or nickname',
+    loginPlaceholder: 'Your name: First Last',
     loginBtn: 'Start',
-    loginError: 'Please enter a name or nickname.',
+    loginError: 'Please enter your name: First Last.',
     loginLoading: 'Loading...',
     logout: 'Log out',
     presenceHeader: 'Logged-in users',
