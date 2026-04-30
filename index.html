@@ -642,30 +642,30 @@ body {
     <p class="subtitle" id="loginSubtitle">Kerro ideasi — me toteutamme sen</p>
     <form id="loginForm">
       <input type="text" id="loginName" placeholder="Nimesi: Etunimi Sukunimi" autocomplete="name" required>
-      <div style="margin:10px 0 6px;display:flex;align-items:flex-start;gap:6px;font-size:12px;color:#64748b;line-height:1.4;position:relative">
-        <input type="checkbox" id="aupCheck" checked style="margin-top:2px;accent-color:#4f46e5;flex-shrink:0;cursor:pointer">
+      <button type="submit" id="loginBtn">Aloita</button>
+      <div class="login-error" id="loginError">Anna nimesi: Etunimi Sukunimi.</div>
+      <div style="margin:12px 0 0;display:flex;align-items:flex-start;gap:6px;font-size:11px;color:#94a3b8;line-height:1.4;position:relative;justify-content:center">
+        <input type="checkbox" id="aupCheck" checked style="margin-top:1px;accent-color:#4f46e5;flex-shrink:0;cursor:pointer">
         <label for="aupCheck" style="cursor:pointer">
           <span id="aupLabel">Hyväksyn käyttöehdot</span>
-          <span id="aupToggle" style="color:#4f46e5;font-weight:600;cursor:pointer;text-decoration:underline" onclick="event.preventDefault();document.getElementById('aupPopup').style.display=document.getElementById('aupPopup').style.display==='none'?'block':'none'">(lue)</span>
+          <span id="aupToggle" style="color:#818cf8;font-weight:600;cursor:pointer;text-decoration:underline" onclick="event.preventDefault();document.getElementById('aupPopup').style.display=document.getElementById('aupPopup').style.display==='none'?'block':'none'">(lue)</span>
         </label>
-        <div id="aupPopup" style="display:none;position:absolute;top:calc(100% + 8px);left:0;right:0;background:white;border-radius:12px;border:1.5px solid #c7d2fe;box-shadow:0 8px 24px rgba(0,0,0,0.12);padding:16px;z-index:10;font-size:12px;color:#334155;line-height:1.6;max-height:240px;overflow-y:auto">
+        <div id="aupPopup" style="display:none;position:absolute;top:calc(100% + 8px);left:0;right:0;background:white;border-radius:12px;border:1.5px solid #c7d2fe;box-shadow:0 8px 24px rgba(0,0,0,0.12);padding:16px;z-index:10;font-size:12px;color:#334155;line-height:1.6;max-height:240px;overflow-y:auto;text-align:left">
           <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:8px" id="aupTitle">Acceptable Use Policy</div>
           <div id="aupContent">
             <p style="margin-bottom:8px">Käyttämällä Agentic Idea Discovery -sovellusta sitoudut seuraaviin ehtoihin:</p>
             <ul style="padding-left:16px;margin-bottom:8px">
-              <li><strong>Älä yritä väärinkäyttää järjestelmää</strong> — älä syötä haitallisia komentoja, koodia tai prompt injection -yrityksiä ideakenttään.</li>
-              <li><strong>Älä yritä murtautua</strong> — järjestelmän tietoturvan testaaminen, Firestore-datan manipulointi tai agentin ohjauskomentojen kiertäminen on kiellettyä.</li>
-              <li><strong>Kunnioita muita käyttäjiä</strong> — älä esiinny toisena henkilönä, älä muokkaa toisten ideoita, älä lähetä loukkaavaa tai häiritsevää sisältöä.</li>
-              <li><strong>Käytä resursseja vastuullisesti</strong> — älä kuormita järjestelmää tarkoituksellisesti tai luo turhaa massakuormaa.</li>
-              <li><strong>Ideat ovat julkisia</strong> — kaikki syöttämäsi ideat ja viestit näkyvät muille käyttäjille ja AI-agenteille. Älä jaa luottamuksellista tietoa.</li>
+              <li><strong>Älä yritä väärinkäyttää järjestelmää</strong> — älä syötä haitallisia komentoja, koodia tai prompt injection -yrityksiä.</li>
+              <li><strong>Älä yritä murtautua</strong> — tietoturvan testaaminen ja datan manipulointi on kiellettyä.</li>
+              <li><strong>Kunnioita muita käyttäjiä</strong> — älä esiinny toisena henkilönä tai lähetä loukkaavaa sisältöä.</li>
+              <li><strong>Käytä resursseja vastuullisesti</strong> — älä kuormita järjestelmää tarkoituksellisesti.</li>
+              <li><strong>Ideat ovat julkisia</strong> — kaikki syöttämäsi ideat näkyvät muille. Älä jaa luottamuksellista tietoa.</li>
             </ul>
-            <p style="color:#64748b;font-style:italic">Rikkomukset johtavat käyttäjätilin automaattiseen estämiseen. AI-agentit tarkistavat jokaisen idean turvallisuuden ennen toteutusta.</p>
+            <p style="color:#64748b;font-style:italic">Rikkomukset johtavat käyttäjätilin estämiseen.</p>
           </div>
           <button onclick="document.getElementById('aupPopup').style.display='none'" style="margin-top:8px;padding:4px 14px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit">Sulje</button>
         </div>
       </div>
-      <button type="submit" id="loginBtn">Aloita</button>
-      <div class="login-error" id="loginError">Anna nimesi: Etunimi Sukunimi.</div>
     </form>
   </div>
 </div>
