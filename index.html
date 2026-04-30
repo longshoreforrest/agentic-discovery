@@ -691,6 +691,7 @@ body {
     <div class="main-tabs" id="mainTabs">
       <button class="main-tab active" data-tab="kanban" onclick="switchTab('kanban')">📋 Kanban</button>
       <button class="main-tab" data-tab="help" onclick="switchTab('help')">🦸 Käyttöopas</button>
+      <button class="main-tab" data-tab="slides" onclick="switchTab('slides')">🎬 Slides</button>
       <button class="main-tab" data-tab="docs" onclick="switchTab('docs')">📖 Dokumentaatio</button>
     </div>
 
@@ -787,6 +788,11 @@ body {
     <div id="tabHelp" style="display:none">
       <div class="docs-section" id="helpContent"></div>
     </div><!-- /tabHelp -->
+
+    <!-- Tab: Slides -->
+    <div id="tabSlides" style="display:none">
+      <div class="docs-section" id="slidesContent"></div>
+    </div><!-- /tabSlides -->
 
     <!-- Tab: Dokumentaatio -->
     <div id="tabDocs" style="display:none">
@@ -949,6 +955,7 @@ const i18n = {
     blockedBanner: 'Tilisi on estetty haitallisen toiminnan vuoksi. Et voi luoda uusia ideoita.',
     tabKanban: '📋 Kanban',
     tabHelp: '🦸 Käyttöopas',
+    tabSlides: '🎬 Slides',
     tabDocs: '📖 Dokumentaatio',
     ideaPlaceholder: 'Kuvaile ideasi tähän... Voit kirjoittaa millä tahansa kielellä tai käyttää mikrofonia puhuaksesi suomeksi tai englanniksi.',
     submitBtn: 'Lähetä idea',
@@ -1058,6 +1065,7 @@ const i18n = {
     blockedBanner: 'Your account has been blocked due to harmful activity. You cannot create new ideas.',
     tabKanban: '📋 Kanban',
     tabHelp: '🦸 User Guide',
+    tabSlides: '🎬 Slides',
     tabDocs: '📖 Documentation',
     ideaPlaceholder: 'Describe your idea here... You can write in any language or use the microphone to speak in Finnish or English.',
     submitBtn: 'Submit idea',
@@ -1189,6 +1197,7 @@ function applyStaticTranslations() {
 
   document.querySelector('[data-tab="kanban"]').textContent = t('tabKanban');
   document.querySelector('[data-tab="help"]').textContent = t('tabHelp');
+  document.querySelector('[data-tab="slides"]').textContent = t('tabSlides');
   document.querySelector('[data-tab="docs"]').textContent = t('tabDocs');
 
   attr('ideaText', 'placeholder', t('ideaPlaceholder'));
@@ -1276,8 +1285,10 @@ function switchTab(tab) {
   document.querySelectorAll('.main-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   document.getElementById('tabKanban').style.display = tab === 'kanban' ? '' : 'none';
   document.getElementById('tabHelp').style.display = tab === 'help' ? '' : 'none';
+  document.getElementById('tabSlides').style.display = tab === 'slides' ? '' : 'none';
   document.getElementById('tabDocs').style.display = tab === 'docs' ? '' : 'none';
   if (tab === 'help') renderHelp();
+  if (tab === 'slides') renderSlides();
 }
 
 function setFilter(filter) {
@@ -1912,6 +1923,41 @@ async function editIdeaAuthor(ideaId) {
   }
 }
 
+function defaultGitDir(ideaId) {
+  return `Helsinki_${ideaId}`;
+}
+
+function copyMkdir(ideaId) {
+  const idea = ideas.find(i => i.ideaId === ideaId);
+  const dir = (idea && idea.gitDir) || defaultGitDir(ideaId);
+  navigator.clipboard.writeText(`mkdir ${dir}`).then(() =>
+    showToast(currentLang === 'fi' ? 'mkdir kopioitu' : 'mkdir copied'));
+}
+
+async function editGitDir(ideaId) {
+  if (!isOrchestrator(currentUser)) return;
+  const idea = ideas.find(i => i.ideaId === ideaId);
+  if (!idea) return;
+  const current = idea.gitDir || defaultGitDir(ideaId);
+  const newDir = prompt(currentLang === 'fi' ? 'Git-hakemisto:' : 'Git directory:', current);
+  if (newDir === null) return;
+  const trimmed = newDir.trim();
+  try {
+    if (trimmed) {
+      await db.collection('categories').doc(CATEGORY).collection('ideas').doc(ideaId).update({ gitDir: trimmed });
+      idea.gitDir = trimmed;
+    } else {
+      await db.collection('categories').doc(CATEGORY).collection('ideas').doc(ideaId).update({ gitDir: firebase.firestore.FieldValue.delete() });
+      delete idea.gitDir;
+    }
+    renderAll();
+    showToast(currentLang === 'fi' ? 'Hakemisto päivitetty' : 'Directory updated');
+  } catch(e) {
+    console.error('editGitDir:', e);
+    showToast(t('toastError'));
+  }
+}
+
 async function editAppUrl(ideaId) {
   if (!isOrchestrator(currentUser)) return;
   const idea = ideas.find(i => i.ideaId === ideaId);
@@ -2217,6 +2263,11 @@ function renderIdeaDetail(idea) {
     </div>
     ${orchestratorHtml}
     ${idea.agentSummary ? `<div style="margin:8px 0;padding:6px 10px;background:var(--primary-light);border-radius:8px;font-size:13px;font-weight:600;color:var(--primary-dark)">🤖 ${esc(idea.agentSummary)}</div>` : ''}
+    ${isOrchestrator(currentUser) ? `<div style="margin:8px 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:13px;color:#166534;font-family:monospace;font-weight:500">📁 ${esc(idea.gitDir || defaultGitDir(idea.ideaId))}</span>
+      <button onclick="event.stopPropagation();copyMkdir('${idea.ideaId}')" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:white;border:1.5px solid #bbf7d0;border-radius:8px;font-size:12px;font-weight:500;color:#166534;cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.borderColor='#22c55e';this.style.background='#f0fdf4'" onmouseout="this.style.borderColor='#bbf7d0';this.style.background='white'" title="${currentLang === 'fi' ? 'Kopioi mkdir-komento' : 'Copy mkdir command'}">📋 mkdir</button>
+      <button onclick="event.stopPropagation();editGitDir('${idea.ideaId}')" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:white;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;color:var(--text-light);cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-light)'">${currentLang === 'fi' ? '✏️ Muokkaa' : '✏️ Edit'}</button>
+    </div>` : ''}
     <div style="margin:8px 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
       <a href="${DEPLOY_BASE_URL}/${idea.ideaId}/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;font-size:13px;color:#4338ca;text-decoration:none;font-weight:500">🔗 ${DEPLOY_BASE_URL}/${idea.ideaId}/ ↗</a>
       ${idea.appUrl ? `<a href="${esc(idea.appUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#ecfdf5;border:1px solid #86efac;border-radius:8px;font-size:13px;color:#166534;text-decoration:none;font-weight:500">${t('appLink')}</a>` : ''}
@@ -2267,6 +2318,289 @@ function renderSlidePanel() {
 // ══════════════════════════════════════════════════════════════
 // ── Help tab ──
 // ══════════════════════════════════════════════════════════════
+
+// ── Slides ──
+
+let currentSlide = 0;
+const TOTAL_SLIDES = 7;
+
+document.addEventListener('keydown', (e) => {
+  if (document.getElementById('tabSlides').style.display === 'none') return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (currentSlide < TOTAL_SLIDES - 1) { currentSlide++; renderSlides(); }
+  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (currentSlide > 0) { currentSlide--; renderSlides(); }
+  }
+});
+
+function renderSlides() {
+  const el = document.getElementById('slidesContent');
+  if (!el) return;
+
+  const qrUrl = 'https://longshoreforrest.github.io/agentic-discovery/';
+  const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrUrl)}&bgcolor=ffffff&color=4338ca`;
+
+  const slides = [
+    // Slide 0: Title + QR + Three-layer model
+    `<div style="padding:32px 20px">
+      <div style="text-align:center;margin-bottom:28px">
+        <div style="font-size:42px;margin-bottom:8px">🦄🧙‍♂️🤖</div>
+        <h1 style="font-size:30px;font-weight:800;color:var(--text);margin-bottom:6px">What is Agentic Discovery?</h1>
+        <p style="font-size:16px;color:var(--text-light);max-width:520px;margin:0 auto">From wild ideas to live apps — powered by humans and AI agents working together</p>
+      </div>
+      <div style="display:flex;gap:28px;align-items:center;justify-content:center;flex-wrap:wrap">
+        <!-- Three-layer concentric circles -->
+        <div style="position:relative;width:280px;height:280px;flex-shrink:0">
+          <!-- Outer ring -->
+          <div style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 30% 30%,#E8F5E9,#C8E6C9);border:3px solid #4CAF50;display:flex;align-items:center;justify-content:center">
+            <div style="position:absolute;top:6px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;color:#2E7D32;text-align:center;line-height:1.3;white-space:nowrap">OUTER LAYER<br><span style="font-weight:400;font-size:10px">Agentic Discovery</span></div>
+          </div>
+          <!-- Middle ring -->
+          <div style="position:absolute;top:11%;left:11%;width:78%;height:78%;border-radius:50%;background:radial-gradient(circle at 30% 30%,#FFF3E0,#FFE0B2);border:3px solid #FF9800">
+            <div style="position:absolute;top:6px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;color:#E65100;text-align:center;line-height:1.3;white-space:nowrap">MIDDLE LAYER<br><span style="font-weight:400;font-size:10px">Integration</span></div>
+          </div>
+          <!-- Inner core -->
+          <div style="position:absolute;top:32%;left:32%;width:36%;height:36%;border-radius:50%;background:radial-gradient(circle at 30% 30%,#E3F2FD,#BBDEFB);border:3px solid #1565C0;display:flex;align-items:center;justify-content:center">
+            <div style="font-size:11px;font-weight:700;color:#1565C0;text-align:center;line-height:1.3">CORE<br><span style="font-weight:400;font-size:10px">Legacy IT</span></div>
+          </div>
+          <!-- Arrows -->
+          <div style="position:absolute;right:6%;top:50%;transform:translateY(-50%);font-size:22px;color:#E65100;opacity:0.6">◀</div>
+          <div style="position:absolute;left:6%;top:50%;transform:translateY(-50%);font-size:22px;color:#2E7D32;opacity:0.6">▶</div>
+        </div>
+        <!-- Layer descriptions -->
+        <div style="display:flex;flex-direction:column;gap:12px;max-width:320px">
+          <div style="background:#E8F5E9;border:1.5px solid #4CAF50;border-radius:12px;padding:12px 16px">
+            <div style="font-size:13px;font-weight:700;color:#2E7D32;margin-bottom:3px">🌱 Outer Layer — Agentic Discovery</div>
+            <div style="font-size:12px;color:#33691E;line-height:1.5">New AI-powered processes. Rapid prototyping of ideas at industrial speed. This is where Agentic Discovery lives.</div>
+          </div>
+          <div style="background:#FFF3E0;border:1.5px solid #FF9800;border-radius:12px;padding:12px 16px">
+            <div style="font-size:13px;font-weight:700;color:#E65100;margin-bottom:3px">🔗 Middle Layer — Integration</div>
+            <div style="font-size:12px;color:#BF360C;line-height:1.5">APIs, connectors, and modernization bridges. Validated prototypes move inward through this layer.</div>
+          </div>
+          <div style="background:#E3F2FD;border:1.5px solid #1565C0;border-radius:12px;padding:12px 16px">
+            <div style="font-size:13px;font-weight:700;color:#1565C0;margin-bottom:3px">🏛️ Core — Legacy IT</div>
+            <div style="font-size:12px;color:#0D47A1;line-height:1.5">Existing systems, databases, and business logic. The stable foundation that the outer layers extend — not replace.</div>
+          </div>
+        </div>
+      </div>
+      <!-- QR code -->
+      <div style="text-align:center;margin-top:24px">
+        <div style="display:inline-block;padding:12px;background:white;border-radius:14px;border:2px solid #c7d2fe;box-shadow:0 4px 12px rgba(67,56,202,0.08)">
+          <img src="${qrImg}" alt="QR Code" style="width:120px;height:120px;display:block;border-radius:6px">
+          <div style="margin-top:6px;font-size:11px;color:var(--primary);font-weight:600">Scan to try it live</div>
+        </div>
+      </div>
+    </div>`,
+
+    // Slide 1: The Problem
+    `<div style="padding:20px">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:28px;font-weight:800;color:var(--text)">🤔 The Problem</div>
+        <div style="font-size:15px;color:var(--text-light);margin-top:6px">Great ideas die in the gap between vision and execution</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px">
+        <div style="background:white;border-radius:16px;padding:20px;border:2px solid #fca5a5;position:relative">
+          <div style="position:absolute;top:-10px;left:16px;background:#fef2f2;padding:2px 12px;border-radius:12px;font-size:10px;font-weight:700;color:#dc2626;border:1.5px solid #fca5a5;text-transform:uppercase">Pain #1</div>
+          <div style="font-size:32px;margin:8px 0">🗑️</div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">Ideas get lost</div>
+          <div style="font-size:13px;color:var(--text-light);margin-top:6px">Post-it notes, Slack threads, hallway chats — ideas vanish before anyone can act on them.</div>
+        </div>
+        <div style="background:white;border-radius:16px;padding:20px;border:2px solid #fca5a5;position:relative">
+          <div style="position:absolute;top:-10px;left:16px;background:#fef2f2;padding:2px 12px;border-radius:12px;font-size:10px;font-weight:700;color:#dc2626;border:1.5px solid #fca5a5;text-transform:uppercase">Pain #2</div>
+          <div style="font-size:32px;margin:8px 0">⏳</div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">Too slow to prototype</div>
+          <div style="font-size:13px;color:var(--text-light);margin-top:6px">Traditional dev cycles take weeks. By then the moment has passed and the energy is gone.</div>
+        </div>
+        <div style="background:white;border-radius:16px;padding:20px;border:2px solid #fca5a5;position:relative">
+          <div style="position:absolute;top:-10px;left:16px;background:#fef2f2;padding:2px 12px;border-radius:12px;font-size:10px;font-weight:700;color:#dc2626;border:1.5px solid #fca5a5;text-transform:uppercase">Pain #3</div>
+          <div style="font-size:32px;margin:8px 0">🚧</div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">Technical barriers</div>
+          <div style="font-size:13px;color:var(--text-light);margin-top:6px">Non-technical people can't build. Developers are busy. The gap between "I wish" and "I have" is too wide.</div>
+        </div>
+      </div>
+    </div>`,
+
+    // Slide 2: The Solution
+    `<div style="padding:20px">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:28px;font-weight:800;color:var(--text)">💡 The Solution: Agentic Discovery</div>
+        <div style="font-size:15px;color:var(--text-light);margin-top:6px">A three-role system where humans dream and AI agents build</div>
+      </div>
+      <div style="background:linear-gradient(160deg, #eff6ff 0%, #fdf4ff 50%, #ede9fe 100%);border-radius:20px;padding:24px;border:2px solid #c7d2fe">
+        <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:20px">
+          <div style="text-align:center;min-width:120px">
+            <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#dbeafe,#bfdbfe);display:flex;align-items:center;justify-content:center;font-size:44px;margin:0 auto;box-shadow:0 4px 12px rgba(59,130,246,0.2)">🦄</div>
+            <div style="font-size:14px;font-weight:700;color:#2563eb;margin-top:8px">Dreamer</div>
+            <div style="font-size:12px;color:var(--text-light)">Has the idea</div>
+          </div>
+          <div style="display:flex;align-items:center;font-size:28px;color:#94a3b8">→</div>
+          <div style="text-align:center;min-width:120px">
+            <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#fae8ff,#f5d0fe);display:flex;align-items:center;justify-content:center;font-size:44px;margin:0 auto;box-shadow:0 4px 12px rgba(168,85,247,0.2)">🧙‍♂️</div>
+            <div style="font-size:14px;font-weight:700;color:#a21caf;margin-top:8px">Orchestrator</div>
+            <div style="font-size:12px;color:var(--text-light)">Guides the work</div>
+          </div>
+          <div style="display:flex;align-items:center;font-size:28px;color:#94a3b8">→</div>
+          <div style="text-align:center;min-width:120px">
+            <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#ede9fe,#ddd6fe);display:flex;align-items:center;justify-content:center;font-size:44px;margin:0 auto;box-shadow:0 4px 12px rgba(139,92,246,0.2)">🤖</div>
+            <div style="font-size:14px;font-weight:700;color:#6d28d9;margin-top:8px">AI Agent</div>
+            <div style="font-size:12px;color:var(--text-light)">Builds the app</div>
+          </div>
+        </div>
+        <div style="text-align:center;background:white;border-radius:12px;padding:16px;border:1.5px solid #e5e7eb">
+          <div style="font-size:16px;font-weight:700;color:var(--text)">The magic formula</div>
+          <div style="font-size:14px;color:var(--text-light);margin-top:6px">Anyone can have an idea. The orchestrator ensures quality. AI agents do the heavy lifting.</div>
+          <div style="margin-top:10px;font-size:13px;font-weight:600;color:var(--primary)">Idea → Ticket → Safety Check → Code → Deploy → Live App</div>
+        </div>
+      </div>
+    </div>`,
+
+    // Slide 3: The Flow (from Elisa proposal style)
+    `<div style="padding:20px">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:28px;font-weight:800;color:var(--text)">🔄 The Agentic Discovery Flow</div>
+        <div style="font-size:15px;color:var(--text-light);margin-top:6px">From idea to deployed application in minutes, not weeks</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        ${[
+          { num: 1, icon: '💡', title: 'Idea Capture', desc: 'Dreamer types or speaks their idea. Voice or text, Finnish or English.', color: '#064AAC', bg: '#e3f2fd', border: '#90caf9', who: '🦄' },
+          { num: 2, icon: '📋', title: 'Kanban Board', desc: 'Idea appears on the board as a new ticket. Visible to everyone in real-time.', color: '#064AAC', bg: '#e3f2fd', border: '#90caf9', who: '🦄' },
+          { num: 3, icon: '🧙‍♂️', title: 'Orchestrator Claims', desc: 'The orchestrator takes ownership. Reviews the idea, checks feasibility.', color: '#7b1fa2', bg: '#f3e5f5', border: '#ce93d8', who: '🧙‍♂️' },
+          { num: 4, icon: '🛡️', title: 'Safety Check', desc: 'AGENT_SAFETY.md rules enforced. No harmful code, no data deletion, no shenanigans.', color: '#7b1fa2', bg: '#f3e5f5', border: '#ce93d8', who: '🧙‍♂️🤖' },
+          { num: 5, icon: '🤖', title: 'AI Agent Builds', desc: 'Claude Code agent reads the idea, writes code, creates the application autonomously.', color: '#2e7d32', bg: '#e8f5e9', border: '#a5d6a7', who: '🤖' },
+          { num: 6, icon: '💬', title: 'Live Reporting', desc: 'Agent posts progress to the ticket thread. Everyone can follow along in real-time.', color: '#2e7d32', bg: '#e8f5e9', border: '#a5d6a7', who: '🤖' },
+          { num: 7, icon: '🚀', title: 'Deploy & Deliver', desc: 'App is pushed to Git, deployed to its own URL. The dreamer clicks and sees their idea alive.', color: '#e65100', bg: '#fff3e0', border: '#ffcc80', who: '🤖' },
+        ].map(s => `
+          <div style="display:flex;gap:14px;align-items:flex-start;background:${s.bg};border:1.5px solid ${s.border};border-radius:14px;padding:14px 18px">
+            <div style="flex-shrink:0;width:40px;height:40px;border-radius:50%;background:white;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:${s.color};border:2px solid ${s.border}">${s.num}</div>
+            <div style="flex:1">
+              <div style="font-size:15px;font-weight:700;color:${s.color}">${s.icon} ${s.title}</div>
+              <div style="font-size:13px;color:var(--text-light);margin-top:2px">${s.desc}</div>
+            </div>
+            <div style="font-size:20px;flex-shrink:0">${s.who}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>`,
+
+    // Slide 4: Why it matters
+    `<div style="padding:20px">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:28px;font-weight:800;color:var(--text)">🎯 Why Agentic Discovery Matters</div>
+        <div style="font-size:15px;color:var(--text-light);margin-top:6px">This isn't just a demo — it's a new way of working</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">
+        <div style="background:white;border-radius:16px;padding:22px;border:2px solid #93c5fd">
+          <div style="font-size:36px;margin-bottom:10px">⚡</div>
+          <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">Speed: Minutes, Not Weeks</div>
+          <div style="font-size:13px;color:var(--text-light);line-height:1.6">Traditional prototyping takes 2–4 weeks. Agentic Discovery delivers a working prototype while you're still in the meeting. The feedback loop shrinks from days to minutes.</div>
+        </div>
+        <div style="background:white;border-radius:16px;padding:22px;border:2px solid #a5d6a7">
+          <div style="font-size:36px;margin-bottom:10px">🌍</div>
+          <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">Democratization of Building</div>
+          <div style="font-size:13px;color:var(--text-light);line-height:1.6">Anyone can submit an idea — no technical skills required. Speak your vision in Finnish or English. The AI agent handles architecture, coding, testing, and deployment.</div>
+        </div>
+        <div style="background:white;border-radius:16px;padding:22px;border:2px solid #ce93d8">
+          <div style="font-size:36px;margin-bottom:10px">🛡️</div>
+          <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">Human-in-the-Loop Safety</div>
+          <div style="font-size:13px;color:var(--text-light);line-height:1.6">The orchestrator reviews every idea before the AI acts. Safety rules prevent harmful code. Humans stay in control — agents stay productive.</div>
+        </div>
+        <div style="background:white;border-radius:16px;padding:22px;border:2px solid #fcd34d">
+          <div style="font-size:36px;margin-bottom:10px">🔄</div>
+          <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">Iterative by Design</div>
+          <div style="font-size:13px;color:var(--text-light);line-height:1.6">Dreamers can add wishes to a ticket at any time. The agent picks up new requests and keeps building. The conversation between human and AI is continuous.</div>
+        </div>
+      </div>
+    </div>`,
+
+    // Slide 5: Real-world impact (Elisa-style)
+    `<div style="padding:20px">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:28px;font-weight:800;color:var(--text)">🏢 Real-World Application</div>
+        <div style="font-size:15px;color:var(--text-light);margin-top:6px">How enterprises can use Agentic Discovery today</div>
+      </div>
+      <div style="background:linear-gradient(135deg,#f8fafc,#eff6ff);border-radius:20px;padding:24px;border:2px solid #c7d2fe">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:20px">
+          <div style="background:white;border-radius:14px;padding:18px;border:1.5px solid #e5e7eb">
+            <div style="font-size:11px;font-weight:700;color:#064AAC;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Phase 1: Discovery</div>
+            <div style="font-size:24px;margin-bottom:6px">🔍</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text)">AI Process Mapping</div>
+            <div style="font-size:12px;color:var(--text-light);margin-top:4px">Identify 15–20 AI use cases across business processes. Let stakeholders submit ideas directly.</div>
+          </div>
+          <div style="background:white;border-radius:14px;padding:18px;border:1.5px solid #e5e7eb">
+            <div style="font-size:11px;font-weight:700;color:#2e7d32;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Phase 2: Rapid Prototyping</div>
+            <div style="font-size:24px;margin-bottom:6px">🏗️</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text)">Agentic Build</div>
+            <div style="font-size:12px;color:var(--text-light);margin-top:4px">Turn top-priority use cases into working prototypes in hours using AI agents. Test feasibility before investing.</div>
+          </div>
+          <div style="background:white;border-radius:14px;padding:18px;border:1.5px solid #e5e7eb">
+            <div style="font-size:11px;font-weight:700;color:#e65100;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Phase 3: Scale</div>
+            <div style="font-size:24px;margin-bottom:6px">🗺️</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text)">AI Roadmap</div>
+            <div style="font-size:12px;color:var(--text-light);margin-top:4px">RICE-score validated prototypes. Build a prioritized transformation roadmap with proven concepts, not PowerPoint promises.</div>
+          </div>
+        </div>
+        <div style="text-align:center;background:white;border-radius:12px;padding:16px;border:1.5px solid #c7d2fe">
+          <div style="font-size:14px;font-weight:700;color:var(--primary)">The key insight</div>
+          <div style="font-size:13px;color:var(--text-light);margin-top:4px">Don't plan AI transformation on paper. <strong>Let people experience it.</strong> Agentic Discovery turns abstract strategy into tangible results anyone can see and use.</div>
+        </div>
+      </div>
+    </div>`,
+
+    // Slide 6: Try it now
+    `<div style="padding:40px 20px;text-align:center">
+      <div style="font-size:52px;margin-bottom:16px">🚀</div>
+      <h2 style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:12px">Try It Now</h2>
+      <p style="font-size:16px;color:var(--text-light);max-width:500px;margin:0 auto 28px;line-height:1.6">
+        Go to the Kanban tab. Type your idea — or speak it.<br>
+        Watch an AI agent turn it into a real application.<br>
+        No coding required. No meetings needed.
+      </p>
+      <div style="display:inline-block;padding:16px;background:white;border-radius:16px;border:2px solid #c7d2fe;box-shadow:0 4px 16px rgba(67,56,202,0.1);margin-bottom:24px">
+        <img src="${qrImg}" alt="QR Code" style="width:150px;height:150px;display:block;border-radius:8px">
+        <div style="margin-top:8px;font-size:11px;color:var(--primary);font-weight:600">Scan or click to open</div>
+      </div>
+      <div style="margin-top:8px">
+        <button onclick="switchTab('kanban')" style="padding:14px 32px;background:linear-gradient(135deg,var(--primary),#4338ca);color:white;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(79,70,229,0.3);transition:all 0.2s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(79,70,229,0.4)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 14px rgba(79,70,229,0.3)'">
+          ${currentLang === 'fi' ? '📋 Siirry Kanbaniin' : '📋 Go to Kanban'}
+        </button>
+      </div>
+      <div style="margin-top:32px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+        <span style="font-size:36px">🦄</span>
+        <span style="font-size:24px;color:#94a3b8;line-height:36px">+</span>
+        <span style="font-size:36px">🧙‍♂️</span>
+        <span style="font-size:24px;color:#94a3b8;line-height:36px">+</span>
+        <span style="font-size:36px">🤖</span>
+        <span style="font-size:24px;color:#94a3b8;line-height:36px">=</span>
+        <span style="font-size:36px">✨</span>
+      </div>
+      <div style="margin-top:12px;font-size:14px;color:var(--text-light);font-style:italic">"Dream it. Build it. Ship it. — Before lunch."</div>
+    </div>`
+  ];
+
+  const prevDisabled = currentSlide === 0 ? 'opacity:0.3;pointer-events:none' : 'cursor:pointer';
+  const nextDisabled = currentSlide === TOTAL_SLIDES - 1 ? 'opacity:0.3;pointer-events:none' : 'cursor:pointer';
+
+  el.innerHTML = `
+    <div style="position:relative;min-height:420px">
+      <div style="background:white;border-radius:20px;border:2px solid #e5e7eb;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.06)">
+        ${slides[currentSlide]}
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-top:20px">
+        <button onclick="currentSlide=Math.max(0,currentSlide-1);renderSlides()" style="padding:10px 20px;background:white;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-weight:600;color:var(--text);font-family:inherit;transition:all 0.15s;${prevDisabled}" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">&larr; ${currentLang === 'fi' ? 'Edellinen' : 'Previous'}</button>
+        <div style="display:flex;gap:6px">
+          ${slides.map((_, i) => `<div onclick="currentSlide=${i};renderSlides()" style="width:${i === currentSlide ? '24px' : '10px'};height:10px;border-radius:5px;background:${i === currentSlide ? 'var(--primary)' : '#d1d5db'};cursor:pointer;transition:all 0.2s"></div>`).join('')}
+        </div>
+        <button onclick="currentSlide=Math.min(${TOTAL_SLIDES - 1},currentSlide+1);renderSlides()" style="padding:10px 20px;background:white;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-weight:600;color:var(--text);font-family:inherit;transition:all 0.15s;${nextDisabled}" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">${currentLang === 'fi' ? 'Seuraava' : 'Next'} &rarr;</button>
+      </div>
+      <div style="text-align:center;margin-top:8px;font-size:12px;color:var(--text-light)">${currentSlide + 1} / ${TOTAL_SLIDES}</div>
+    </div>
+  `;
+}
+
+// ── Help ──
 
 let helpViewRole = null;
 
@@ -2920,6 +3254,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     renderAll();
     showRoleWelcome();
     showHeaderRole();
+    document.querySelector('[data-tab="docs"]').style.display = isOrchestrator(name) ? '' : 'none';
     document.getElementById('langToggle').style.display = 'flex';
     document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLang));
     applyStaticTranslations();
