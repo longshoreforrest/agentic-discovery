@@ -1,10 +1,10 @@
-# IdeaAgent — Firebase-projektin pystytys
+# Agentic Discovery — Firebase-projektin pystytys
 
 ## 1. Luo Firebase-projekti
 
 1. Mene https://console.firebase.google.com
 2. Klikkaa "Add project"
-3. Anna nimeksi esim. `ideaagent` tai `ideaagent-prod`
+3. Anna nimeksi esim. `agentic-discovery` tai `agentic-discovery-prod`
 4. Ota Analytics pois päältä (ei tarvita)
 5. Klikkaa "Create project"
 
@@ -24,26 +24,42 @@ Mene Firestore → Rules ja korvaa oletussäännöt:
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Kategoriadokumentit — luku kaikille, kirjoitus rajoitettu
     match /categories/{categoryId} {
       allow read: if true;
       allow write: if true;
 
-      // Ideat — luku kaikille, kirjoitus kaikille (anonyymi)
       match /ideas/{ideaId} {
         allow read: if true;
         allow create: if true;
         allow update: if true;
       }
 
-      // Sessiot — luku/kirjoitus kaikille (presence-seuranta)
       match /sessions/{sessionId} {
+        allow read, write: if true;
+      }
+
+      match /agentSessions/{agentId} {
+        allow read, write: if true;
+      }
+
+      match /mentions/{mentionId} {
+        allow read, write: if true;
+      }
+
+      match /login_history/{entryId} {
+        allow read, write: if true;
+      }
+
+      match /_meta/{metaId} {
         allow read, write: if true;
       }
     }
   }
 }
 ```
+
+> Aina kun lisäät uuden alikokoelman `categories/{cat}/<uusi>` muista lisätä
+> sille `match`-blokki — Firestore ei peri sääntöjä alikokoelmiin.
 
 **Huom:** Nämä säännöt ovat avoimet koska sovellus on anonyymikirjautuminen
 nimimerkillä. Tuotantokäytössä voi kiristää sääntöjä Firebase Auth
@@ -53,7 +69,7 @@ nimimerkillä. Tuotantokäytössä voi kiristää sääntöjä Firebase Auth
 
 1. Projektin asetukset (rattaan ikoni) → General
 2. Alhaalla "Your apps" → klikkaa web-ikoni `</>`
-3. Anna nickname: `IdeaAgent Web`
+3. Anna nickname: `Agentic Discovery Web`
 4. ÄLÄ ota Firebase Hosting käyttöön (käytetään GitHub Pages)
 5. Kopioi `firebaseConfig`-objekti
 
@@ -64,9 +80,9 @@ Avaa `index.html` ja korvaa placeholder-arvot:
 ```javascript
 const firebaseConfig = {
   apiKey: "AIzaSy...",
-  authDomain: "ideaagent-xxxxx.firebaseapp.com",
-  projectId: "ideaagent-xxxxx",
-  storageBucket: "ideaagent-xxxxx.appspot.com",
+  authDomain: "agentic-discovery-xxxxx.firebaseapp.com",
+  projectId: "agentic-discovery-xxxxx",
+  storageBucket: "agentic-discovery-xxxxx.appspot.com",
   messagingSenderId: "123456789",
   appId: "1:123456789:web:abcdef123456"
 };

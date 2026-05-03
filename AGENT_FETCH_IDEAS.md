@@ -1,4 +1,4 @@
-# IdeaAgent — Ideoiden haku tietokannasta
+# Agentic Discovery — Ideoiden haku tietokannasta
 
 Tämä ohje kertoo Claude Code -agentille miten hakea tietyn kategorian ideat
 Firestore-tietokannasta CLI-työkalulla `_agent.js`.

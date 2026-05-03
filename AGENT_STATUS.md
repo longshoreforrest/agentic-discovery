@@ -1,4 +1,4 @@
-# IdeaAgent — Toteutuksen statuksen kirjoittaminen
+# Agentic Discovery — Toteutuksen statuksen kirjoittaminen
 
 Tämä ohje kertoo Claude Code -agentille miten kirjoittaa toteutuksen
 edistyminen takaisin idean viestiketjuun.

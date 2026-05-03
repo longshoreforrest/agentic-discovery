@@ -327,7 +327,7 @@ async function main() {
 
   // ── help ──
   else {
-    console.log(`IdeaAgent CLI — Agentin vuoropuhelutyökalu
+    console.log(`Agentic Discovery CLI — Agentin vuoropuhelutyökalu
 
 Komennot:
   node _agent.js fetch     <category> <ideaId>                — Hae koko viestiketju

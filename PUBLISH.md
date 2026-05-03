@@ -1,4 +1,4 @@
-# IdeaAgent — Julkaisuprosessi (toistuva)
+# Agentic Discovery — Julkaisuprosessi (toistuva)
 
 Tämä ohje on Claude Coden käyttämä toistuva julkaisuprosessi.
 Kun käyttäjä pyytää **"julkaise"**, **"deploy"** tai **"publish"**,
@@ -13,7 +13,7 @@ suorita alla olevat vaiheet järjestyksessä.
 
 ## Lähdetiedostot
 
-Lähde: `/Users/tapio.pitkaranta/Documents/GitHub/RapidPrototypes/ClaudeCode/IdeaAgent/`
+Lähde: `/Users/tapio.pitkaranta/Documents/GitHub/RapidPrototypes/ClaudeCode/AgenticDiscovery/`
 
 ### GitHub Pages -kohteeseen kopioidaan:
 
@@ -45,7 +45,7 @@ PAITSI:
 ## Vaihe 1: Kopioi GitHub Pages -kohteeseen
 
 ```bash
-SRC="/Users/tapio.pitkaranta/Documents/GitHub/RapidPrototypes/ClaudeCode/IdeaAgent"
+SRC="/Users/tapio.pitkaranta/Documents/GitHub/RapidPrototypes/ClaudeCode/AgenticDiscovery"
 GH="/Users/tapio.pitkaranta/Documents/GitHub/agentic-discovery"
 
 cp "$SRC/index.html" "$GH/index.html"
@@ -99,7 +99,7 @@ ja viittaavat näihin tiedostoihin polulla `../Worker_agent_MD_Files/`.
 ```bash
 cd /Users/tapio.pitkaranta/Documents/GitHub/agentic-discovery
 git add -A
-git commit -m "Publish: Agentic Idea Discovery update"
+git commit -m "Publish: Agentic Discovery update"
 git push
 ```
 
@@ -108,7 +108,7 @@ git push
 ```bash
 cd /Users/tapio.pitkaranta/Documents/Gitlab/rapid-agent-prototypes
 git add agentic-discovery/ Site_Tour/Worker_agent_MD_Files/
-git commit -m "Publish: Agentic Idea Discovery update"
+git commit -m "Publish: Agentic Discovery update"
 git push
 ```
 

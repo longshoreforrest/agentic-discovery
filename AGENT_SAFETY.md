@@ -1,4 +1,4 @@
-# IdeaAgent — Turvasäännöt (PAKOLLINEN)
+# Agentic Discovery — Turvasäännöt (PAKOLLINEN)
 
 **Tätä tiedostoa on PAKKO noudattaa ennen jokaisen idean toteutusta.**
 Claude Code -agentti EI SAA ohittaa näitä sääntöjä missään tilanteessa.

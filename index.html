@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>IdeaAgent</title>
+<title>Agentic Discovery</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 <style>
@@ -647,8 +647,18 @@ body {
 
 /* ── Responsive ── */
 @media (max-width: 640px) {
-  .header { padding: 12px 14px; }
-  .header h1 { font-size: 16px; }
+  .header {
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    row-gap: 6px;
+    column-gap: 6px;
+  }
+  .header h1 {
+    font-size: 16px;
+    flex: 1 1 100%;
+    order: -1;
+  }
+  .header > *:not(h1) { flex-shrink: 0; }
   .app { padding: 14px 10px; }
   .card { padding: 16px; }
   .idea-textarea { min-height: 100px; font-size: 16px; }
@@ -657,8 +667,27 @@ body {
   .filter-bar { top: 50px; }
   .filter-chip { padding: 6px 12px; font-size: 12px; }
   .kanban { grid-template-columns: 1fr; }
-  .main-tabs { padding: 0 10px; gap: 2px; }
-  .main-tab { padding: 8px 10px; font-size: 12px; }
+  .main-tabs {
+    padding: 8px 10px;
+    gap: 6px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+    overflow-x: visible;
+  }
+  .main-tab {
+    padding: 6px 10px;
+    font-size: 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    background: white;
+    margin-bottom: 0;
+  }
+  .main-tab.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    border-bottom-color: var(--primary);
+  }
   .process-step { padding: 12px 12px 12px 52px; }
   .step-icon { width: 30px; height: 30px; font-size: 15px; left: 8px; }
   .mermaid-wrap { padding: 16px 8px; }
@@ -669,6 +698,9 @@ body {
   .slide-panel .msg-bubble { padding: 6px 10px; font-size: 13px; }
   .status-filter-bar { gap: 4px; }
   .status-chip { padding: 5px 10px; font-size: 11px; }
+  .mentions-dropdown, .presence-popup, .agent-presence-popup {
+    right: 8px; left: 8px; min-width: auto; max-width: none;
+  }
 }
 </style>
 </head>
@@ -706,6 +738,17 @@ body {
         </div>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- ── CATEGORY-MISSING Overlay ── -->
+<div id="categoryMissingOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:linear-gradient(135deg,#0f172a,#1e293b);color:#e2e8f0;align-items:center;justify-content:center;padding:24px;font-family:inherit">
+  <div style="max-width:520px;text-align:center;background:rgba(15,23,42,0.85);border:1.5px solid #334155;border-radius:16px;padding:36px 32px;box-shadow:0 12px 40px rgba(0,0,0,0.45)">
+    <div style="font-size:44px;margin-bottom:12px">🚫</div>
+    <div style="font-size:22px;font-weight:800;color:#f87171;margin-bottom:14px;letter-spacing:0.5px">CATEGORY-MISSING</div>
+    <p style="font-size:14px;line-height:1.6;color:#cbd5e1;margin-bottom:14px">Tämä sovellus tarvitsee kategorian päästäkseen käyntiin.<br>Avaa oikea linkki, jossa on muodossa <code style="background:#1e293b;padding:2px 8px;border-radius:6px;font-size:12px;color:#fbbf24">?category=KATEGORIAN_NIMI</code></p>
+    <p style="font-size:12px;color:#64748b;margin-top:18px">This application requires a category parameter in the URL.</p>
+    <div id="categoryMissingLogged" style="margin-top:18px;font-size:11px;color:#475569"></div>
   </div>
 </div>
 
@@ -780,6 +823,7 @@ body {
       <button class="main-tab" data-tab="apps" onclick="switchTab('apps')" id="tabAppsBtn">🚀 Kaikki Sovellusaihiot</button>
       <button class="main-tab" data-tab="analytics" onclick="switchTab('analytics')">📊 Analytiikka</button>
       <button class="main-tab" data-tab="docs" onclick="switchTab('docs')">📖 Dokumentaatio</button>
+      <button class="main-tab" data-tab="statistics" id="tabStatisticsBtn" style="display:none" onclick="switchTab('statistics')">📈 Statistics</button>
     </div>
 
     <!-- Tab: Kanban -->
@@ -1129,6 +1173,58 @@ body {
       </div>
     </div><!-- /tabDocs -->
 
+    <!-- Tab: Statistics (admin only) -->
+    <div id="tabStatistics" style="display:none">
+      <div class="card" style="background:linear-gradient(135deg,#eff6ff,#e0e7ff);border:1.5px solid #c7d2fe;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+          <span style="font-size:22px">📈</span>
+          <div>
+            <div style="font-size:18px;font-weight:700;color:#1e40af">Statistics &amp; Admin</div>
+            <p style="font-size:12px;color:#475569;margin:0">Kirjautumiset, käyttäjät ja kategoriat — kategoria <code style="background:#fff;padding:1px 6px;border-radius:4px;font-size:11px;color:#4338ca" id="statsCategoryLabel">—</code></p>
+          </div>
+        </div>
+      </div>
+
+      <div id="statsKpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:18px"></div>
+
+      <div class="card" style="margin-bottom:18px">
+        <div style="font-size:14px;font-weight:700;color:#334155;margin-bottom:10px">Kirjautumiset / päivä (viim. 14 vrk)</div>
+        <div id="statsDailyChart" style="display:flex;align-items:flex-end;gap:6px;height:140px;border-bottom:1px solid #e2e8f0;padding-bottom:4px"></div>
+        <div id="statsDailyLabels" style="display:flex;gap:6px;margin-top:4px;font-size:10px;color:#94a3b8"></div>
+      </div>
+
+      <div class="card" style="margin-bottom:18px">
+        <div style="font-size:14px;font-weight:700;color:#334155;margin-bottom:10px">Top 10 käyttäjää (kirjautumismäärä)</div>
+        <div id="statsTopUsers"></div>
+      </div>
+
+      <div class="card" style="margin-bottom:18px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <div style="font-size:14px;font-weight:700;color:#334155">Kaikki kirjautumiset (uusin ensin)</div>
+          <input type="text" id="statsLogFilter" placeholder="Suodata käyttäjällä…" oninput="renderStatistics()" style="padding:6px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:12px;font-family:inherit;width:200px">
+        </div>
+        <div style="overflow-x:auto;max-height:480px;overflow-y:auto;border:1px solid #f1f5f9;border-radius:8px">
+          <table id="statsLogTable" style="width:100%;border-collapse:collapse;font-size:13px"></table>
+        </div>
+        <div id="statsLogCount" style="font-size:11px;color:#94a3b8;margin-top:6px"></div>
+      </div>
+
+      <div class="card" style="margin-bottom:18px">
+        <div style="font-size:14px;font-weight:700;color:#334155;margin-bottom:10px">Kategoriat</div>
+        <div id="statsCategoryList" style="margin-bottom:16px"></div>
+        <div style="border-top:1px solid #e2e8f0;padding-top:14px">
+          <div style="font-size:13px;font-weight:600;color:#334155;margin-bottom:8px">Luo uusi kategoria</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+            <input type="text" id="newCatId" placeholder="ID, esim. Asiakas_Tapahtuma_20260601" style="padding:8px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:13px;font-family:inherit">
+            <input type="text" id="newCatName" placeholder="Näyttönimi" style="padding:8px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:13px;font-family:inherit">
+          </div>
+          <input type="text" id="newCatDesc" placeholder="Kuvaus (vapaaehtoinen)" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:13px;font-family:inherit;margin-bottom:8px">
+          <button onclick="adminCreateCategory()" style="padding:8px 16px;background:linear-gradient(135deg,#4f46e5,#4338ca);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">+ Luo kategoria</button>
+          <div id="newCatStatus" style="margin-top:8px;font-size:12px"></div>
+        </div>
+      </div>
+    </div><!-- /tabStatistics -->
+
   </div>
 
   <!-- Slide-in panel overlay -->
@@ -1222,28 +1318,59 @@ const firebaseConfig = {
   appId: "1:200473613216:web:a250c904d76061edb84ac5"
 };
 
-// ── Category config (set during deploy) ──
-const CATEGORY = window.__IDEAAGENT_CATEGORY || 'Siili-Site-Tour-2026';
+// ── Category config (URL parameter ?category=...) ──
+const _qs = new URLSearchParams(window.location.search);
+const _urlCategory = (_qs.get('category') || '').trim();
+const CATEGORY = _urlCategory || window.__IDEAAGENT_CATEGORY || 'CATEGORY-MISSING';
+const CATEGORY_VALID = CATEGORY !== 'CATEGORY-MISSING';
 const DEPLOY_BASE_URL = 'https://rapid-agent-prototypes-af869c.gitlab-siili.io';
 const ORCHESTRATORS = ['Tapio Pitkäranta', 'Tommi Pajala'];
+const ADMIN_USER = 'Tapio Pitkäranta';
 
 function isOrchestrator(name) {
   return ORCHESTRATORS.includes(name);
 }
 
+function isAdmin(name) {
+  return name === ADMIN_USER;
+}
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+// Block app if no category in URL — log the hit and show CATEGORY-MISSING screen
+if (!CATEGORY_VALID) {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('categoryMissingOverlay').style.display = 'flex';
+  (async function logCategoryMissing() {
+    try {
+      const ref = db.collection('categories').doc('CATEGORY-MISSING').collection('login_history').doc();
+      await ref.set({
+        user: 'anonymous',
+        loginAt: new Date().toISOString(),
+        ua: navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop',
+        userAgent: navigator.userAgent,
+        referrer: document.referrer || '',
+        url: window.location.href
+      });
+      const stamp = new Date().toLocaleString();
+      document.getElementById('categoryMissingLogged').textContent = `Käynti loggattu: ${stamp}`;
+    } catch(e) { console.warn('logCategoryMissing:', e); }
+  })();
+}
+
 // Show category on login screen
-(async function showCategoryOnLogin() {
-  try {
-    const doc = await db.collection('categories').doc(CATEGORY).get();
-    const name = doc.exists && doc.data().name ? doc.data().name : (CATEGORY !== 'default' ? CATEGORY : '');
-    if (name) {
-      document.getElementById('loginSubtitle').textContent = name;
-    }
-  } catch(e) { /* ignore */ }
-})();
+if (CATEGORY_VALID) {
+  (async function showCategoryOnLogin() {
+    try {
+      const doc = await db.collection('categories').doc(CATEGORY).get();
+      const name = doc.exists && doc.data().name ? doc.data().name : CATEGORY;
+      if (name) {
+        document.getElementById('loginSubtitle').textContent = name;
+      }
+    } catch(e) { /* ignore */ }
+  })();
+}
 
 // ── State ──
 let currentUser = '';
@@ -1658,7 +1785,9 @@ function switchTab(tab) {
   document.getElementById('tabApps').style.display = tab === 'apps' ? '' : 'none';
   document.getElementById('tabAnalytics').style.display = tab === 'analytics' ? '' : 'none';
   document.getElementById('tabDocs').style.display = tab === 'docs' ? '' : 'none';
+  document.getElementById('tabStatistics').style.display = tab === 'statistics' ? '' : 'none';
   if (tab === 'analytics') renderAnalytics();
+  if (tab === 'statistics') loadAndRenderStatistics();
   if (tab === 'help') renderHelp();
   if (tab === 'slides') renderSlides();
 }
@@ -1780,23 +1909,50 @@ async function saveIdea(ideaData) {
 
 // ── Sessions / Presence ──
 async function recordSession() {
-  const entry = {
-    user: currentUser,
-    loginAt: new Date().toISOString(),
-    ua: navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop'
-  };
+  const now = new Date().toISOString();
+  const ua = navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop';
+  const entry = { user: currentUser, loginAt: now, ua };
   try {
     await db.collection('categories').doc(CATEGORY).collection('sessions').doc(currentUser.toLowerCase()).set(entry);
+    await db.collection('categories').doc(CATEGORY).collection('login_history').add({
+      user: currentUser,
+      loginAt: now,
+      ua,
+      category: CATEGORY
+    });
     await loadSessions();
     renderPresence();
   } catch(e) { console.warn('recordSession:', e); }
 }
 
+// One-time migration: copy current sessions/{user} docs into login_history if not yet done.
+async function migrateSessionsToHistoryOnce() {
+  try {
+    const flagRef = db.collection('categories').doc(CATEGORY).collection('_meta').doc('history_migration');
+    const flag = await flagRef.get();
+    if (flag.exists && flag.data().done) return;
+    const snap = await db.collection('categories').doc(CATEGORY).collection('sessions').get();
+    const writes = [];
+    snap.forEach(doc => {
+      const s = doc.data();
+      if (!s || !s.user || !s.loginAt) return;
+      writes.push(db.collection('categories').doc(CATEGORY).collection('login_history').add({
+        user: s.user,
+        loginAt: s.loginAt,
+        ua: s.ua || 'unknown',
+        category: CATEGORY,
+        migrated: true
+      }));
+    });
+    await Promise.all(writes);
+    await flagRef.set({ done: true, migratedAt: new Date().toISOString(), count: writes.length });
+    console.log(`[migration] copied ${writes.length} session docs into login_history`);
+  } catch(e) { console.warn('migrateSessionsToHistoryOnce:', e); }
+}
+
 async function loadSessions() {
   try {
-    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const snap = await db.collection('categories').doc(CATEGORY).collection('sessions')
-      .where('loginAt', '>=', cutoff).get();
+    const snap = await db.collection('categories').doc(CATEGORY).collection('sessions').get();
     sessions = snap.docs.map(d => d.data());
   } catch(e) {
     console.warn('loadSessions:', e);
@@ -1813,9 +1969,7 @@ async function removeSession() {
 let sessionsUnsub = null;
 function startRealtimeSessions() {
   if (sessionsUnsub) sessionsUnsub();
-  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   sessionsUnsub = db.collection('categories').doc(CATEGORY).collection('sessions')
-    .where('loginAt', '>=', cutoff)
     .onSnapshot(snap => {
       sessions = snap.docs.map(d => d.data());
       renderPresence();
@@ -1885,6 +2039,179 @@ document.addEventListener('click', e => {
     document.getElementById('agentPresencePopup').style.display = 'none';
   }
 });
+
+// ══════════════════════════════════════════════════════════════
+// ── Statistics (admin) ──
+// ══════════════════════════════════════════════════════════════
+
+let statsLoginHistory = [];
+let statsCategories = [];
+
+async function loadAndRenderStatistics() {
+  if (!isAdmin(currentUser)) return;
+  document.getElementById('statsCategoryLabel').textContent = CATEGORY;
+  try {
+    const snap = await db.collection('categories').doc(CATEGORY).collection('login_history').get();
+    statsLoginHistory = snap.docs.map(d => d.data())
+      .filter(s => s && s.user && s.loginAt)
+      .sort((a, b) => b.loginAt.localeCompare(a.loginAt));
+  } catch(e) { console.warn('loadStatistics:', e); statsLoginHistory = []; }
+  try {
+    const snap = await db.collection('categories').get();
+    statsCategories = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+  } catch(e) { console.warn('loadCategories:', e); statsCategories = []; }
+  renderStatistics();
+}
+
+function renderStatistics() {
+  const logs = statsLoginHistory;
+  const total = logs.length;
+  const uniqueUsers = new Set(logs.map(l => l.user)).size;
+  const now = Date.now();
+  const last7 = logs.filter(l => now - new Date(l.loginAt).getTime() < 7 * 86400000).length;
+  const last24 = logs.filter(l => now - new Date(l.loginAt).getTime() < 86400000).length;
+
+  const userCounts = {};
+  logs.forEach(l => { userCounts[l.user] = (userCounts[l.user] || 0) + 1; });
+  const topUsers = Object.entries(userCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const topUser = topUsers[0];
+
+  const kpis = [
+    { label: 'Kirjautumiset yhteensä', value: total, color: '#4f46e5' },
+    { label: 'Uniikit käyttäjät', value: uniqueUsers, color: '#0891b2' },
+    { label: 'Viim. 7 vrk', value: last7, color: '#0d9488' },
+    { label: 'Viim. 24 h', value: last24, color: '#7c3aed' },
+    { label: 'Aktiivisin käyttäjä', value: topUser ? `${topUser[0]} (${topUser[1]})` : '—', color: '#db2777', small: true }
+  ];
+  document.getElementById('statsKpis').innerHTML = kpis.map(k => `
+    <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;border-left:4px solid ${k.color}">
+      <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:4px">${esc(k.label)}</div>
+      <div style="font-size:${k.small ? '14' : '22'}px;font-weight:800;color:#0f172a">${esc(String(k.value))}</div>
+    </div>`).join('');
+
+  const days = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(now - i * 86400000);
+    const key = d.toISOString().slice(0, 10);
+    days.push({ key, label: `${d.getDate()}.${d.getMonth() + 1}.`, count: 0 });
+  }
+  logs.forEach(l => {
+    const key = (l.loginAt || '').slice(0, 10);
+    const day = days.find(d => d.key === key);
+    if (day) day.count++;
+  });
+  const maxCount = Math.max(1, ...days.map(d => d.count));
+  document.getElementById('statsDailyChart').innerHTML = days.map(d => {
+    const h = Math.round((d.count / maxCount) * 130);
+    const color = d.count === 0 ? '#e2e8f0' : 'linear-gradient(180deg,#6366f1,#4338ca)';
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%" title="${d.label} ${d.count}">
+      <div style="font-size:10px;color:#64748b;font-weight:600;margin-bottom:2px">${d.count || ''}</div>
+      <div style="width:100%;height:${h}px;background:${color};border-radius:4px 4px 0 0;min-height:${d.count ? 2 : 0}px"></div>
+    </div>`;
+  }).join('');
+  document.getElementById('statsDailyLabels').innerHTML = days.map(d =>
+    `<div style="flex:1;text-align:center">${d.label}</div>`).join('');
+
+  document.getElementById('statsTopUsers').innerHTML = topUsers.length === 0
+    ? '<div style="color:#94a3b8;font-size:13px">Ei kirjautumisia.</div>'
+    : topUsers.map(([user, count], i) => {
+      const pct = Math.round((count / topUsers[0][1]) * 100);
+      const color = nameColor(user);
+      return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;${i < topUsers.length - 1 ? 'border-bottom:1px solid #f1f5f9' : ''}">
+        <div style="width:28px;height:28px;border-radius:50%;background:${color};color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${esc(user.substring(0, 2).toUpperCase())}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:#334155">${esc(user)}</div>
+          <div style="height:5px;background:#f1f5f9;border-radius:3px;margin-top:3px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${color}"></div></div>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:#0f172a">${count}</div>
+      </div>`;
+    }).join('');
+
+  const filter = (document.getElementById('statsLogFilter')?.value || '').trim().toLowerCase();
+  const filtered = filter ? logs.filter(l => l.user.toLowerCase().includes(filter)) : logs;
+  const fmt = iso => {
+    const d = new Date(iso);
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+  const rows = filtered.slice(0, 1000).map(l => `
+    <tr style="border-bottom:1px solid #f1f5f9">
+      <td style="padding:6px 10px;color:#475569;font-family:monospace;font-size:12px;white-space:nowrap">${fmt(l.loginAt)}</td>
+      <td style="padding:6px 10px;color:#0f172a;font-weight:600">${esc(l.user)}</td>
+      <td style="padding:6px 10px;color:#64748b">${l.ua === 'mobile' ? '📱 mobile' : '💻 desktop'}</td>
+      <td style="padding:6px 10px;color:#94a3b8;font-size:11px">${l.migrated ? 'migr.' : ''}</td>
+    </tr>`).join('');
+  document.getElementById('statsLogTable').innerHTML = `
+    <thead style="position:sticky;top:0;background:#f8fafc;z-index:1">
+      <tr>
+        <th style="padding:8px 10px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0">Aika</th>
+        <th style="padding:8px 10px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0">Käyttäjä</th>
+        <th style="padding:8px 10px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0">Laite</th>
+        <th style="padding:8px 10px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0"></th>
+      </tr>
+    </thead>
+    <tbody>${rows || '<tr><td colspan="4" style="padding:14px;text-align:center;color:#94a3b8;font-size:13px">Ei kirjautumisia.</td></tr>'}</tbody>`;
+  document.getElementById('statsLogCount').textContent = filtered.length === filtered.slice(0, 1000).length
+    ? `${filtered.length} riviä`
+    : `Näytetään 1000 / ${filtered.length} riviä`;
+
+  const cats = [...statsCategories].sort((a, b) => a.id.localeCompare(b.id));
+  const appBase = window.location.origin + window.location.pathname;
+  document.getElementById('statsCategoryList').innerHTML = cats.length === 0
+    ? '<div style="color:#94a3b8;font-size:13px">Ei kategorioita.</div>'
+    : cats.map(c => {
+      const isCurrent = c.id === CATEGORY;
+      const appUrl = `${appBase}?category=${encodeURIComponent(c.id)}${currentUser ? `&name=${encodeURIComponent(currentUser)}` : ''}`;
+      return `<div style="padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:6px;display:flex;align-items:center;gap:10px;background:${isCurrent ? '#eff6ff' : 'white'}">
+        <code style="font-size:12px;color:#4338ca;background:#f1f5f9;padding:2px 6px;border-radius:4px">${esc(c.id)}</code>
+        <div style="flex:1;font-size:13px;color:#334155">${esc(c.name || '—')}${c.description ? ` · <span style="color:#64748b;font-size:12px">${esc(c.description)}</span>` : ''}</div>
+        ${isCurrent ? '<span style="font-size:10px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:8px;font-weight:700">aktiivinen</span>' : ''}
+        <a href="${esc(appUrl)}" target="_blank" rel="noopener" title="Avaa kategoria uudessa välilehdessä" style="font-size:11px;background:linear-gradient(135deg,#4f46e5,#4338ca);color:white;padding:4px 10px;border-radius:8px;text-decoration:none;font-weight:700;white-space:nowrap">Avaa ↗</a>
+      </div>`;
+    }).join('');
+}
+
+async function adminCreateCategory() {
+  if (!isAdmin(currentUser)) return;
+  const idEl = document.getElementById('newCatId');
+  const nameEl = document.getElementById('newCatName');
+  const descEl = document.getElementById('newCatDesc');
+  const statusEl = document.getElementById('newCatStatus');
+  const id = idEl.value.trim();
+  const name = nameEl.value.trim();
+  const desc = descEl.value.trim();
+  if (!id || !/^[A-Za-z0-9_\-]+$/.test(id)) {
+    statusEl.innerHTML = '<span style="color:#dc2626">ID puuttuu tai sisältää kiellettyjä merkkejä (vain A-Z, a-z, 0-9, _, -).</span>';
+    return;
+  }
+  if (!name) {
+    statusEl.innerHTML = '<span style="color:#dc2626">Näyttönimi puuttuu.</span>';
+    return;
+  }
+  try {
+    const ref = db.collection('categories').doc(id);
+    const existing = await ref.get();
+    if (existing.exists) {
+      statusEl.innerHTML = '<span style="color:#dc2626">Kategoria on jo olemassa.</span>';
+      return;
+    }
+    await ref.set({
+      categoryId: id,
+      name,
+      description: desc,
+      createdAt: new Date().toISOString(),
+      createdBy: currentUser,
+      blockedUsers: []
+    });
+    const url = `${window.location.origin}${window.location.pathname}?category=${encodeURIComponent(id)}`;
+    statusEl.innerHTML = `<span style="color:#059669">✅ Luotu. Linkki: <a href="${esc(url)}" target="_blank" style="color:#4338ca">${esc(url)}</a></span>`;
+    idEl.value = ''; nameEl.value = ''; descEl.value = '';
+    loadAndRenderStatistics();
+  } catch(e) {
+    console.warn('adminCreateCategory:', e);
+    statusEl.innerHTML = `<span style="color:#dc2626">Virhe: ${esc(e.message || String(e))}</span>`;
+  }
+}
 
 // ══════════════════════════════════════════════════════════════
 // ── Mentions (@-maininnat) ──
@@ -3235,7 +3562,8 @@ function renderSlides() {
   const el = document.getElementById('slidesContent');
   if (!el) return;
 
-  const qrUrl = 'https://longshoreforrest.github.io/agentic-discovery/';
+  const qrBase = 'https://longshoreforrest.github.io/agentic-discovery/';
+  const qrUrl = CATEGORY_VALID ? `${qrBase}?category=${encodeURIComponent(CATEGORY)}` : qrBase;
   const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrUrl)}&bgcolor=ffffff&color=4338ca`;
 
   const slides = [
@@ -3246,9 +3574,8 @@ function renderSlides() {
       <p style="font-size:18px;color:var(--text-light);max-width:520px;margin:0 auto 32px;line-height:1.5">From wild ideas to live apps — powered by humans and AI agents working together</p>
       <div style="display:inline-block;padding:16px;background:white;border-radius:16px;border:2px solid #c7d2fe;box-shadow:0 4px 16px rgba(67,56,202,0.1)">
         <img src="${qrImg}" alt="QR Code" style="width:180px;height:180px;display:block;border-radius:8px">
-        <div style="margin-top:10px;font-size:12px;color:var(--primary);font-weight:600">longshoreforrest.github.io/agentic-discovery</div>
       </div>
-      <div style="margin-top:24px;font-size:14px;color:var(--text-light)">Scan to try it live</div>
+      <div style="margin-top:24px;font-size:14px;color:var(--text-light)">Scan to try it live${CATEGORY_VALID ? ` — <strong style="color:var(--primary)">${CATEGORY}</strong>` : ''}</div>
     </div>`,
 
     // Slide 1: Three-layer modernization model
@@ -4108,7 +4435,7 @@ if (saved) document.getElementById('loginName').value = saved;
 const urlParams = new URLSearchParams(window.location.search);
 const urlName = urlParams.get('name');
 const urlIdea = urlParams.get('idea');
-if (urlName && urlName.trim()) {
+if (CATEGORY_VALID && urlName && urlName.trim()) {
   document.getElementById('loginName').value = urlName.trim();
   setTimeout(() => document.getElementById('loginForm').dispatchEvent(new Event('submit')), 100);
 }
@@ -4150,6 +4477,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
       document.getElementById('micBtn').disabled = true;
     }
 
+    migrateSessionsToHistoryOnce();
     recordSession();
     initSpeech();
     startRealtimeIdeas();
@@ -4160,6 +4488,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     showRoleWelcome();
     showHeaderRole();
     document.querySelector('[data-tab="docs"]').style.display = isOrchestrator(name) ? '' : 'none';
+    document.getElementById('tabStatisticsBtn').style.display = isAdmin(name) ? '' : 'none';
     document.getElementById('langToggle').style.display = 'flex';
     document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLang));
     applyStaticTranslations();

@@ -1,4 +1,4 @@
-# IdeaAgent — Ideoiden toteutus (jonotyöskentely)
+# Agentic Discovery — Ideoiden toteutus (jonotyöskentely)
 
 Tämä ohje kertoo Claude Code -agentille miten poimia ja toteuttaa ideoita
 jatkuvana vuoropuheluna käyttäjien kanssa.
