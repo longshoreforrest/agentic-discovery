@@ -1219,6 +1219,7 @@ body {
             <input type="text" id="newCatName" placeholder="Näyttönimi" style="padding:8px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:13px;font-family:inherit">
           </div>
           <input type="text" id="newCatDesc" placeholder="Kuvaus (vapaaehtoinen)" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:13px;font-family:inherit;margin-bottom:8px">
+          <input type="text" id="newCatDeployUrl" placeholder="Deploy Base URL, esim. https://example.io/apps" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:13px;font-family:inherit;margin-bottom:8px">
           <button onclick="adminCreateCategory()" style="padding:8px 16px;background:linear-gradient(135deg,#4f46e5,#4338ca);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">+ Luo kategoria</button>
           <div id="newCatStatus" style="margin-top:8px;font-size:12px"></div>
         </div>
@@ -1289,7 +1290,7 @@ const flowStepData = {
   D: { title: '⚡ Agentti hommissa', body: '<p>Agentti aloittaa idean toteuttamisen. Kanbanissa kortti siirtyy <strong>"🤖 Agentti hommissa"</strong> -sarakkeeseen.</p><ul><li>Status: <strong>in-progress</strong></li><li>Agentti näkyy yläpalkin 🤖-laskurissa (agenttiläsnäolo)</li><li>Agentti kirjoittaa koodia, luo tiedostoja ja rakentaa sovelluksen</li><li>Kaikki muutokset näkyvät reaaliajassa Firestore onSnapshot -kuuntelulla</li></ul>' },
   R: { title: '📝 Raportointi tiketille', body: '<p>Agentti raportoi edistymisen suoraan tiketin viestiketjuun.</p><ul><li>Komento: <code>node _agent.js reply</code> — kirjoita väliraportti</li><li>Agenttileima (stamp) näyttää viestiketjussa mihin asti on käsitelty</li><li><code>lastProcessedIndex</code> seuraa käsiteltyjen viestien rajaa</li><li>Agentti tiivistää ydinajatuksen 2–3 sanaan kanban-korttiin</li></ul>' },
   E: { title: '💬 Lisäideoita?', body: '<p>Toteutuksen jälkeen tarkistetaan onko käyttäjä lisännyt uusia toiveita kesken työn.</p><ul><li>Kanbanissa: <strong>"🤖💬 Lisäideoita!"</strong> -sarake näyttää tiketit joissa uusia viestejä</li><li>Orchestrator näkee uudet viestit agenttileiman jälkeen</li><li>Jos uusia → orchestrator kopioi ne agentille (CC) → uusi kierros</li><li>Jos ei uusia → merkitään valmiiksi</li></ul>' },
-  F: { title: '✅ Valmis', body: '<p>Kaikki toiveet on toteutettu. Agentti merkitsee idean valmiiksi.</p><ul><li>Status: <strong>Valmis</strong></li><li>Sovellus julkaistaan deploy-URL:iin: <code>DEPLOY_BASE_URL/ideaId/</code></li><li>Linkki näkyy kanban-kortilla ja tiketin sisällä</li><li>Käyttäjä voi silti lisätä jatkotoiveita → uusi kierros alkaa katkoviivan kautta</li></ul>' },
+  F: { title: '✅ Valmis', body: '<p>Kaikki toiveet on toteutettu. Agentti merkitsee idean valmiiksi.</p><ul><li>Status: <strong>Valmis</strong></li><li>Sovellus julkaistaan deploy-URL:iin: <code>deployBaseUrl/ideaId/</code></li><li>Linkki näkyy kanban-kortilla ja tiketin sisällä</li><li>Käyttäjä voi silti lisätä jatkotoiveita → uusi kierros alkaa katkoviivan kautta</li></ul>' },
   G: { title: '🆕 Uusia pyyntöjä', body: '<p>Käyttäjä on lisännyt uusia toiveita kesken tai jälkeen toteutuksen.</p><ul><li>Kortti siirtyy <strong>"🤖💬 Lisäideoita!"</strong> -sarakkeeseen kanbanissa</li><li>Orchestrator käyttää <strong>"🆕 Uudet edellisen toteutuksen jälkeen"</strong> -nappia kopioidakseen vain uudet pyynnöt agentille</li><li>Vuoropuhelu Dreamer ↔ Orchestrator ↔ Agentti voi jatkua rajattomasti</li></ul>' },
   X: { title: '🚫 Estetty', body: '<p>Turvatarkistus havaitsi haitallista sisältöä. Idea on estetty eikä sitä toteuteta.</p><ul><li>Status: <strong>Estetty</strong></li><li>Käyttäjä lisätään estolistalle automaattisesti</li><li>Estetty käyttäjä ei voi luoda uusia ideoita eikä kommentoida</li><li>Sovellus näyttää varoituksen käyttäjälle</li></ul>' }
 };
@@ -1323,7 +1324,7 @@ const _qs = new URLSearchParams(window.location.search);
 const _urlCategory = (_qs.get('category') || '').trim();
 const CATEGORY = _urlCategory || window.__IDEAAGENT_CATEGORY || 'CATEGORY-MISSING';
 const CATEGORY_VALID = CATEGORY !== 'CATEGORY-MISSING';
-const DEPLOY_BASE_URL = 'https://rapid-agent-prototypes-af869c.gitlab-siili.io';
+let deployBaseUrl = '';
 const ORCHESTRATORS = ['Tapio Pitkäranta', 'Tommi Pajala'];
 const ADMIN_USER = 'Tapio Pitkäranta';
 
@@ -1359,14 +1360,15 @@ if (!CATEGORY_VALID) {
   })();
 }
 
-// Show category on login screen
+// Show category on login screen + load deployBaseUrl
 if (CATEGORY_VALID) {
   (async function showCategoryOnLogin() {
     try {
       const doc = await db.collection('categories').doc(CATEGORY).get();
-      const name = doc.exists && doc.data().name ? doc.data().name : CATEGORY;
-      if (name) {
-        document.getElementById('loginSubtitle').textContent = name;
+      if (doc.exists) {
+        const data = doc.data();
+        if (data.name) document.getElementById('loginSubtitle').textContent = data.name;
+        if (data.deployBaseUrl) deployBaseUrl = data.deployBaseUrl.replace(/\/+$/, '');
       }
     } catch(e) { /* ignore */ }
   })();
@@ -2162,11 +2164,15 @@ function renderStatistics() {
     : cats.map(c => {
       const isCurrent = c.id === CATEGORY;
       const appUrl = `${appBase}?category=${encodeURIComponent(c.id)}${currentUser ? `&name=${encodeURIComponent(currentUser)}` : ''}`;
-      return `<div style="padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:6px;display:flex;align-items:center;gap:10px;background:${isCurrent ? '#eff6ff' : 'white'}">
-        <code style="font-size:12px;color:#4338ca;background:#f1f5f9;padding:2px 6px;border-radius:4px">${esc(c.id)}</code>
-        <div style="flex:1;font-size:13px;color:#334155">${esc(c.name || '—')}${c.description ? ` · <span style="color:#64748b;font-size:12px">${esc(c.description)}</span>` : ''}</div>
-        ${isCurrent ? '<span style="font-size:10px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:8px;font-weight:700">aktiivinen</span>' : ''}
-        <a href="${esc(appUrl)}" target="_blank" rel="noopener" title="Avaa kategoria uudessa välilehdessä" style="font-size:11px;background:linear-gradient(135deg,#4f46e5,#4338ca);color:white;padding:4px 10px;border-radius:8px;text-decoration:none;font-weight:700;white-space:nowrap">Avaa ↗</a>
+      const catDeployUrl = c.deployBaseUrl ? `<div style="font-size:11px;color:#64748b;margin-top:2px">🌐 ${esc(c.deployBaseUrl)}</div>` : '';
+      return `<div style="padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:6px;background:${isCurrent ? '#eff6ff' : 'white'}">
+        <div style="display:flex;align-items:center;gap:10px">
+          <code style="font-size:12px;color:#4338ca;background:#f1f5f9;padding:2px 6px;border-radius:4px">${esc(c.id)}</code>
+          <div style="flex:1;font-size:13px;color:#334155">${esc(c.name || '—')}${c.description ? ` · <span style="color:#64748b;font-size:12px">${esc(c.description)}</span>` : ''}</div>
+          ${isCurrent ? '<span style="font-size:10px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:8px;font-weight:700">aktiivinen</span>' : ''}
+          <a href="${esc(appUrl)}" target="_blank" rel="noopener" title="Avaa kategoria uudessa välilehdessä" style="font-size:11px;background:linear-gradient(135deg,#4f46e5,#4338ca);color:white;padding:4px 10px;border-radius:8px;text-decoration:none;font-weight:700;white-space:nowrap">Avaa ↗</a>
+        </div>
+        ${catDeployUrl}
       </div>`;
     }).join('');
 }
@@ -2176,10 +2182,12 @@ async function adminCreateCategory() {
   const idEl = document.getElementById('newCatId');
   const nameEl = document.getElementById('newCatName');
   const descEl = document.getElementById('newCatDesc');
+  const deployUrlEl = document.getElementById('newCatDeployUrl');
   const statusEl = document.getElementById('newCatStatus');
   const id = idEl.value.trim();
   const name = nameEl.value.trim();
   const desc = descEl.value.trim();
+  const catDeployUrl = (deployUrlEl.value || '').trim().replace(/\/+$/, '');
   if (!id || !/^[A-Za-z0-9_\-]+$/.test(id)) {
     statusEl.innerHTML = '<span style="color:#dc2626">ID puuttuu tai sisältää kiellettyjä merkkejä (vain A-Z, a-z, 0-9, _, -).</span>';
     return;
@@ -2195,21 +2203,45 @@ async function adminCreateCategory() {
       statusEl.innerHTML = '<span style="color:#dc2626">Kategoria on jo olemassa.</span>';
       return;
     }
-    await ref.set({
+    const catData = {
       categoryId: id,
       name,
       description: desc,
       createdAt: new Date().toISOString(),
       createdBy: currentUser,
       blockedUsers: []
-    });
+    };
+    if (catDeployUrl) catData.deployBaseUrl = catDeployUrl;
+    await ref.set(catData);
     const url = `${window.location.origin}${window.location.pathname}?category=${encodeURIComponent(id)}`;
     statusEl.innerHTML = `<span style="color:#059669">✅ Luotu. Linkki: <a href="${esc(url)}" target="_blank" style="color:#4338ca">${esc(url)}</a></span>`;
-    idEl.value = ''; nameEl.value = ''; descEl.value = '';
+    idEl.value = ''; nameEl.value = ''; descEl.value = ''; deployUrlEl.value = '';
     loadAndRenderStatistics();
   } catch(e) {
     console.warn('adminCreateCategory:', e);
     statusEl.innerHTML = `<span style="color:#dc2626">Virhe: ${esc(e.message || String(e))}</span>`;
+  }
+}
+
+async function editDeployBaseUrl() {
+  if (!isAdmin(currentUser)) return;
+  const current = deployBaseUrl || '';
+  const newUrl = prompt(currentLang === 'fi' ? 'Deploy Base URL kategorialle:' : 'Deploy Base URL for category:', current);
+  if (newUrl === null) return;
+  const trimmed = newUrl.trim().replace(/\/+$/, '');
+  try {
+    if (trimmed) {
+      await db.collection('categories').doc(CATEGORY).update({ deployBaseUrl: trimmed });
+      deployBaseUrl = trimmed;
+    } else {
+      await db.collection('categories').doc(CATEGORY).update({ deployBaseUrl: firebase.firestore.FieldValue.delete() });
+      deployBaseUrl = '';
+    }
+    renderAll();
+    showToast(currentLang === 'fi' ? 'Deploy URL päivitetty' : 'Deploy URL updated');
+  } catch(e) {
+    console.error('editDeployBaseUrl:', e);
+    showToast(t('toastError'));
   }
 }
 
@@ -3028,7 +3060,7 @@ function renderKanbanCard(idea) {
   const summaryIcon = hasAgentSummary ? '🤖 ' : '';
   const msgCount = (idea.messages || []).length;
   const msgBadge = msgCount > 1 ? `${msgCount} ${t('messages')}` : '';
-  const deployUrl = `${DEPLOY_BASE_URL}/${idea.gitDir || defaultGitDir(idea.ideaId)}/`;
+  const deployUrl = `${deployBaseUrl}/${idea.gitDir || defaultGitDir(idea.ideaId)}/`;
   return `<div class="kanban-card" onclick="openIdea('${idea.ideaId}')">
     <div class="kanban-card-author">
       <span style="width:16px;height:16px;border-radius:50%;background:${color};color:white;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:700">${initials}</span>
@@ -3039,7 +3071,7 @@ function renderKanbanCard(idea) {
     <div class="kanban-card-footer">
       <span>${formatDateTime(idea.createdAt)}</span>
       ${msgBadge ? '<span>' + msgBadge + '</span>' : ''}
-      ${isOrchestrator(currentUser) ? `<a href="${deployUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#6366f1;text-decoration:none;margin-left:auto;display:inline-flex;align-items:center;gap:2px" title="${deployUrl}">${t('openLink')}</a>` : ''}
+      ${isOrchestrator(currentUser) && deployBaseUrl ? `<a href="${deployUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#6366f1;text-decoration:none;margin-left:auto;display:inline-flex;align-items:center;gap:2px" title="${deployUrl}">${t('openLink')}</a>` : ''}
     </div>
   </div>`;
 }
@@ -3240,9 +3272,13 @@ function renderIdeaDetail(idea) {
       <button onclick="event.stopPropagation();copyMkdirCd('${idea.ideaId}')" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:white;border:1.5px solid #bbf7d0;border-radius:8px;font-size:12px;font-weight:500;color:#166534;cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.borderColor='#22c55e';this.style.background='#f0fdf4'" onmouseout="this.style.borderColor='#bbf7d0';this.style.background='white'" title="${currentLang === 'fi' ? 'Kopioi mkdir+cd -komento' : 'Copy mkdir+cd command'}">📋 mkdir+cd</button>
       <button onclick="event.stopPropagation();editGitDir('${idea.ideaId}')" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:white;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;color:var(--text-light);cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-light)'">${currentLang === 'fi' ? '✏️ Muokkaa' : '✏️ Edit'}</button>
     </div>` : ''}
+    ${isAdmin(currentUser) ? `<div style="margin:8px 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;font-size:12px;color:#92400e;font-family:monospace;font-weight:500">🌐 ${deployBaseUrl || '<em>ei asetettu</em>'}</span>
+      <button onclick="event.stopPropagation();editDeployBaseUrl()" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:white;border:1.5px solid #fbbf24;border-radius:8px;font-size:12px;font-weight:500;color:#92400e;cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.borderColor='#f59e0b';this.style.background='#fffbeb'" onmouseout="this.style.borderColor='#fbbf24';this.style.background='white'">${currentLang === 'fi' ? '✏️ Deploy URL' : '✏️ Deploy URL'}</button>
+    </div>` : ''}
     <div style="margin:8px 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-      ${isOrchestrator(currentUser) ? `<a href="${DEPLOY_BASE_URL}/${idea.gitDir || defaultGitDir(idea.ideaId)}/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;font-size:13px;color:#4338ca;text-decoration:none;font-weight:500">🔗 ${DEPLOY_BASE_URL}/${idea.gitDir || defaultGitDir(idea.ideaId)}/ ↗</a>` : ''}
-      ${idea.appUrl ? `<a href="${esc(idea.appUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#ecfdf5;border:1px solid #86efac;border-radius:8px;font-size:13px;color:#166534;text-decoration:none;font-weight:500">${t('appLink')}</a>` : `<a href="${DEPLOY_BASE_URL}/${idea.gitDir || defaultGitDir(idea.ideaId)}/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#ecfdf5;border:1px solid #86efac;border-radius:8px;font-size:13px;color:#166534;text-decoration:none;font-weight:500">${t('appLink')}</a>`}
+      ${isOrchestrator(currentUser) && deployBaseUrl ? `<a href="${deployBaseUrl}/${idea.gitDir || defaultGitDir(idea.ideaId)}/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;font-size:13px;color:#4338ca;text-decoration:none;font-weight:500">🔗 ${deployBaseUrl}/${idea.gitDir || defaultGitDir(idea.ideaId)}/ ↗</a>` : ''}
+      ${idea.appUrl ? `<a href="${esc(idea.appUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#ecfdf5;border:1px solid #86efac;border-radius:8px;font-size:13px;color:#166534;text-decoration:none;font-weight:500">${t('appLink')}</a>` : (deployBaseUrl ? `<a href="${deployBaseUrl}/${idea.gitDir || defaultGitDir(idea.ideaId)}/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#ecfdf5;border:1px solid #86efac;border-radius:8px;font-size:13px;color:#166534;text-decoration:none;font-weight:500">${t('appLink')}</a>` : '')}
       ${isOrchestrator(currentUser) ? `<button onclick="event.stopPropagation();editAppUrl('${idea.ideaId}')" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:white;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;color:var(--text-light);cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-light)'">${idea.appUrl ? '✏️' : '➕'} ${currentLang === 'fi' ? 'Muokkaa URL' : 'Edit URL'}</button>` : ''}
       <button onclick="event.stopPropagation();closeIdea();inviteToIdea('${idea.ideaId}')" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:white;border:1.5px solid #fbbf24;border-radius:8px;font-size:12px;font-weight:600;color:#92400e;cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.background='#fffbeb'" onmouseout="this.style.background='white'">💌 ${currentLang === 'fi' ? 'Kutsu kaveri' : 'Invite friend'}</button>
     </div>
@@ -3260,9 +3296,9 @@ function renderIdeaDetail(idea) {
       </div>
     </div>` : ''}
     ${addThoughtHtml}
-    <div style="margin:12px 0 4px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center">
-      <a href="${idea.appUrl ? esc(idea.appUrl) : `${DEPLOY_BASE_URL}/${idea.gitDir || defaultGitDir(idea.ideaId)}/`}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#ecfdf5;border:1.5px solid #86efac;border-radius:10px;font-size:14px;color:#166534;text-decoration:none;font-weight:600;transition:all 0.15s" onmouseover="this.style.background='#dcfce7';this.style.borderColor='#22c55e'" onmouseout="this.style.background='#ecfdf5';this.style.borderColor='#86efac'">${t('appLink')}</a>
-    </div>
+    ${(idea.appUrl || deployBaseUrl) ? `<div style="margin:12px 0 4px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center">
+      <a href="${idea.appUrl ? esc(idea.appUrl) : `${deployBaseUrl}/${idea.gitDir || defaultGitDir(idea.ideaId)}/`}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#ecfdf5;border:1.5px solid #86efac;border-radius:10px;font-size:14px;color:#166534;text-decoration:none;font-weight:600;transition:all 0.15s" onmouseover="this.style.background='#dcfce7';this.style.borderColor='#22c55e'" onmouseout="this.style.background='#ecfdf5';this.style.borderColor='#86efac'">${t('appLink')}</a>
+    </div>` : ''}
   </div>`;
 }
 
