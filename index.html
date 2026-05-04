@@ -1325,6 +1325,7 @@ const _urlCategory = (_qs.get('category') || '').trim();
 const CATEGORY = _urlCategory || window.__IDEAAGENT_CATEGORY || 'CATEGORY-MISSING';
 const CATEGORY_VALID = CATEGORY !== 'CATEGORY-MISSING';
 let deployBaseUrl = '';
+let gitDirPrefix = '';
 const ORCHESTRATORS = ['Tapio Pitkäranta', 'Tommi Pajala'];
 const ADMIN_USER = 'Tapio Pitkäranta';
 
@@ -1369,6 +1370,7 @@ if (CATEGORY_VALID) {
         const data = doc.data();
         if (data.name) document.getElementById('loginSubtitle').textContent = data.name;
         if (data.deployBaseUrl) deployBaseUrl = data.deployBaseUrl.replace(/\/+$/, '');
+        if (data.gitDirPrefix !== undefined) gitDirPrefix = data.gitDirPrefix;
       }
     } catch(e) { /* ignore */ }
   })();
@@ -2799,7 +2801,7 @@ async function editIdeaAuthor(ideaId) {
 }
 
 function defaultGitDir(ideaId) {
-  return `Helsinki_${ideaId}`;
+  return `${gitDirPrefix}${ideaId}`;
 }
 
 function copyMkdir(ideaId) {
