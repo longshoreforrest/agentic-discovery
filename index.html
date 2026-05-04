@@ -2821,6 +2821,13 @@ function copyMkdirCd(ideaId) {
     showToast(currentLang === 'fi' ? 'mkdir+cd kopioitu' : 'mkdir+cd copied'));
 }
 
+function copyCd(ideaId) {
+  const idea = ideas.find(i => i.ideaId === ideaId);
+  const dir = (idea && idea.gitDir) || defaultGitDir(ideaId);
+  navigator.clipboard.writeText(`cd ${dir}`).then(() =>
+    showToast(currentLang === 'fi' ? 'cd kopioitu' : 'cd copied'));
+}
+
 async function editGitDir(ideaId) {
   if (!isOrchestrator(currentUser)) return;
   const idea = ideas.find(i => i.ideaId === ideaId);
@@ -3275,6 +3282,7 @@ function renderIdeaDetail(idea) {
       <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:13px;color:#166534;font-family:monospace;font-weight:500">📁 ${esc(idea.gitDir || defaultGitDir(idea.ideaId))}</span>
       <button onclick="event.stopPropagation();copyMkdir('${idea.ideaId}')" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:white;border:1.5px solid #bbf7d0;border-radius:8px;font-size:12px;font-weight:500;color:#166534;cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.borderColor='#22c55e';this.style.background='#f0fdf4'" onmouseout="this.style.borderColor='#bbf7d0';this.style.background='white'" title="${currentLang === 'fi' ? 'Kopioi mkdir-komento' : 'Copy mkdir command'}">📋 mkdir</button>
       <button onclick="event.stopPropagation();copyMkdirCd('${idea.ideaId}')" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:white;border:1.5px solid #bbf7d0;border-radius:8px;font-size:12px;font-weight:500;color:#166534;cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.borderColor='#22c55e';this.style.background='#f0fdf4'" onmouseout="this.style.borderColor='#bbf7d0';this.style.background='white'" title="${currentLang === 'fi' ? 'Kopioi mkdir+cd -komento' : 'Copy mkdir+cd command'}">📋 mkdir+cd</button>
+      <button onclick="event.stopPropagation();copyCd('${idea.ideaId}')" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:white;border:1.5px solid #bbf7d0;border-radius:8px;font-size:12px;font-weight:500;color:#166534;cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.borderColor='#22c55e';this.style.background='#f0fdf4'" onmouseout="this.style.borderColor='#bbf7d0';this.style.background='white'" title="${currentLang === 'fi' ? 'Kopioi cd-komento' : 'Copy cd command'}">📋 cd</button>
       <button onclick="event.stopPropagation();editGitDir('${idea.ideaId}')" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:white;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;color:var(--text-light);cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-light)'">${currentLang === 'fi' ? '✏️ Muokkaa' : '✏️ Edit'}</button>
     </div>` : ''}
     ${isAdmin(currentUser) ? `<div style="margin:8px 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
