@@ -1170,6 +1170,10 @@ body {
           <div id="flowStepTitle" style="font-size:16px;font-weight:700;margin-bottom:8px"></div>
           <div id="flowStepBody" style="font-size:13px;line-height:1.6;color:var(--text-light)"></div>
         </div>
+
+        <h2 id="swimlaneTitle" style="font-size:20px;font-weight:700;margin:32px 0 4px;color:var(--text)">Prosessikaavio rooleittain</h2>
+        <p id="swimlaneSubtitle" style="font-size:13px;color:var(--text-light);margin-bottom:16px">Uimaratanäkymä — kuka tekee mitäkin</p>
+        <div id="swimlaneChart" style="overflow-x:auto"></div>
       </div>
     </div><!-- /tabDocs -->
 
@@ -1244,22 +1248,26 @@ body {
 // ── Mermaid init ──
 mermaid.initialize({ startOnLoad: false, securityLevel: 'loose', flowchart: { curve: 'basis', padding: 16 }, theme: 'base', themeVariables: { primaryColor: '#e0e7ff', primaryBorderColor: '#6366f1', primaryTextColor: '#1e293b', lineColor: '#94a3b8', secondaryColor: '#f1f5f9', tertiaryColor: '#ecfdf5', fontSize: '14px' } });
 
-const mermaidDef = `flowchart TD
+const mermaidDefs = {
+  fi: `flowchart TD
   A["🦄 Idea syntyy"]:::blue --> B["🧙‍♂️ Orchestrator ottaa vastuun"]:::orchid
-  B --> CC["🤖 Copy to Claude Code"]:::orchid
-  CC --> S["🔒 Turvatarkistus"]:::purple
-  S -->|Turvallinen| D["⚡ Agentti hommissa"]:::amber
+  B --> S["🔒 Orchestratorin turvatarkistus"]:::orchid
+  S -->|Turvallinen| CC["🤖 Agentin toimeksianto"]:::orchid
   S -->|Haitallinen| X["🚫 Estetty"]:::red
+  CC --> AS["🔒 Agentin turvatarkistus"]:::amber
+  AS -->|Hyväksytty| D["⚡ Agentti hommissa"]:::amber
+  AS -.->|Hylätty + kommentit| B
   D --> R["📝 Raportointi tiketille"]:::purple
-  R --> E{"💬 Lisaideoita?"}:::diamond
+  R --> E{"💬 Lisäideoita?"}:::diamond
   E -->|Ei| F["✅ Valmis"]:::green
-  E -->|Kylla| G["🆕 Uusia pyyntoja"]:::orange
-  G --> CC
+  E -->|Kyllä| G["🆕 Uusia pyyntöjä"]:::orange
+  G --> S
   F -.->|Uusi kierros| A
   click A flowStepClick
   click B flowStepClick
   click CC flowStepClick
   click S flowStepClick
+  click AS flowStepClick
   click D flowStepClick
   click R flowStepClick
   click E flowStepClick
@@ -1273,30 +1281,92 @@ const mermaidDef = `flowchart TD
   classDef green fill:#dcfce7,stroke:#22c55e,stroke-width:2px,color:#14532d
   classDef orange fill:#ffedd5,stroke:#f97316,stroke-width:2px,color:#7c2d12
   classDef red fill:#fef2f2,stroke:#ef4444,stroke-width:2px,color:#7f1d1d
-  classDef diamond fill:#f8fafc,stroke:#94a3b8,stroke-width:2px,color:#1e293b`;
+  classDef diamond fill:#f8fafc,stroke:#94a3b8,stroke-width:2px,color:#1e293b`,
+  en: `flowchart TD
+  A["🦄 Idea is born"]:::blue --> B["🧙‍♂️ Orchestrator takes ownership"]:::orchid
+  B --> S["🔒 Orchestrator safety check"]:::orchid
+  S -->|Safe| CC["🤖 Assign Agent for Execution"]:::orchid
+  S -->|Harmful| X["🚫 Blocked"]:::red
+  CC --> AS["🔒 Agent safety check"]:::amber
+  AS -->|Approved| D["⚡ Agent working"]:::amber
+  AS -.->|Rejected + comments| B
+  D --> R["📝 Report to ticket"]:::purple
+  R --> E{"💬 More ideas?"}:::diamond
+  E -->|No| F["✅ Done"]:::green
+  E -->|Yes| G["🆕 New requests"]:::orange
+  G --> S
+  F -.->|New round| A
+  click A flowStepClick
+  click B flowStepClick
+  click CC flowStepClick
+  click S flowStepClick
+  click AS flowStepClick
+  click D flowStepClick
+  click R flowStepClick
+  click E flowStepClick
+  click F flowStepClick
+  click G flowStepClick
+  click X flowStepClick
+  classDef blue fill:#dbeafe,stroke:#3b82f6,stroke-width:2px,color:#1e3a5f
+  classDef purple fill:#ede9fe,stroke:#8b5cf6,stroke-width:2px,color:#3b0764
+  classDef orchid fill:#fae8ff,stroke:#d946ef,stroke-width:2px,color:#701a75
+  classDef amber fill:#fef3c7,stroke:#f59e0b,stroke-width:2px,color:#78350f
+  classDef green fill:#dcfce7,stroke:#22c55e,stroke-width:2px,color:#14532d
+  classDef orange fill:#ffedd5,stroke:#f97316,stroke-width:2px,color:#7c2d12
+  classDef red fill:#fef2f2,stroke:#ef4444,stroke-width:2px,color:#7f1d1d
+  classDef diamond fill:#f8fafc,stroke:#94a3b8,stroke-width:2px,color:#1e293b`
+};
 
-mermaid.render('mermaidSvg', mermaidDef).then(result => {
-  document.getElementById('mermaidChart').innerHTML = result.svg;
-}).catch(err => {
-  console.error('Mermaid error:', err);
-  document.getElementById('mermaidChart').innerHTML = '<p style="color:red">Kaavion renderöinti epäonnistui</p>';
-});
+let mermaidRenderCounter = 0;
+function renderMermaidChart() {
+  const lang = currentLang || 'fi';
+  const def = mermaidDefs[lang] || mermaidDefs.fi;
+  mermaidRenderCounter++;
+  const id = 'mermaidSvg' + mermaidRenderCounter;
+  mermaid.render(id, def).then(result => {
+    const el = document.getElementById('mermaidChart');
+    if (el) el.innerHTML = result.svg;
+  }).catch(err => {
+    console.error('Mermaid error:', err);
+    const el = document.getElementById('mermaidChart');
+    if (el) el.innerHTML = lang === 'en'
+      ? '<p style="color:red">Diagram rendering failed</p>'
+      : '<p style="color:red">Kaavion renderöinti epäonnistui</p>';
+  });
+}
 
 const flowStepData = {
-  A: { title: '🦄 Idea syntyy', body: '<p><strong>Chief Dream Officer</strong> kirjautuu sovellukseen nimimerkillä ja luo uuden idean.</p><ul><li>Kirjoita tekstikenttään millä tahansa kielellä</li><li>Tai puhu ideasi mikrofonin kautta (suomi / englanti)</li><li>Idea saa uniikin ID:n (yyyyMMdd_hhmm_NNN)</li><li>Kanbanissa: <strong>Tuoreet ideat</strong> -sarake</li><li>Muut käyttäjät näkevät idean reaaliajassa</li></ul>' },
-  B: { title: '🧙‍♂️ Orchestrator ottaa vastuun', body: '<p><strong>Agent Farm Orchestrator</strong> (Tapio Pitkäranta tai Tommi Pajala) näkee uuden idean Kanbanissa ja ottaa sen vastuulleen.</p><ul><li>Klikkaa <strong>"Ota vastuulleni"</strong> — nimi lukittuu tikettiin transaktiolla</li><li>Orchestrator voi muokata idean ehdottajaa, poistaa kommentteja ja hallita tikettiä</li><li>Kaikki näkevät kenen vastuulla tiketti on — filtterit per orchestrator</li><li>Voi vapauttaa tiketin muille: <strong>"En ehdi — siirrän vastuun muille"</strong></li></ul>' },
-  CC: { title: '🤖 Copy to Claude Code', body: '<p>Orchestrator kopioi käyttäjän pyynnöt Claude Code -agentille käyttöliittymän kautta.</p><ul><li><strong>📋 Kaikki pyynnöt</strong> — kopioi kaikki käyttäjäviestit tiketiltä</li><li><strong>🆕 Uudet edellisen toteutuksen jälkeen</strong> — vain uudet pyynnöt</li><li><strong>🤖 CC</strong> — yksittäisen viestin kohdalla kopioi vain se</li><li>Prompti sisältää automaattisesti ohjeen agentille raportoida aloitus ja lopetus tiketille</li></ul>' },
-  S: { title: '🔒 Turvatarkistus', body: '<p>Claude Code -agentti lukee <strong>AGENT_SAFETY.md</strong> -turvasäännöt pakollisesti ennen toteutusta.</p><ul><li>Komentoriviinjektiot, tiedostomanipulaatio, prompt injection → estetään</li><li>Verkkohyökkäykset, resurssien väärinkäyttö, käyttäjien häirintä → estetään</li><li>Haitallinen idea → status: <strong>Estetty</strong>, käyttäjä bannataan</li><li>Epäselvä idea → jätetään orchestratorin arvioitavaksi</li></ul>' },
-  D: { title: '⚡ Agentti hommissa', body: '<p>Agentti aloittaa idean toteuttamisen. Kanbanissa kortti siirtyy <strong>"🤖 Agentti hommissa"</strong> -sarakkeeseen.</p><ul><li>Status: <strong>in-progress</strong></li><li>Agentti näkyy yläpalkin 🤖-laskurissa (agenttiläsnäolo)</li><li>Agentti kirjoittaa koodia, luo tiedostoja ja rakentaa sovelluksen</li><li>Kaikki muutokset näkyvät reaaliajassa Firestore onSnapshot -kuuntelulla</li></ul>' },
-  R: { title: '📝 Raportointi tiketille', body: '<p>Agentti raportoi edistymisen suoraan tiketin viestiketjuun.</p><ul><li>Komento: <code>node _agent.js reply</code> — kirjoita väliraportti</li><li>Agenttileima (stamp) näyttää viestiketjussa mihin asti on käsitelty</li><li><code>lastProcessedIndex</code> seuraa käsiteltyjen viestien rajaa</li><li>Agentti tiivistää ydinajatuksen 2–3 sanaan kanban-korttiin</li></ul>' },
-  E: { title: '💬 Lisäideoita?', body: '<p>Toteutuksen jälkeen tarkistetaan onko käyttäjä lisännyt uusia toiveita kesken työn.</p><ul><li>Kanbanissa: <strong>"🤖💬 Lisäideoita!"</strong> -sarake näyttää tiketit joissa uusia viestejä</li><li>Orchestrator näkee uudet viestit agenttileiman jälkeen</li><li>Jos uusia → orchestrator kopioi ne agentille (CC) → uusi kierros</li><li>Jos ei uusia → merkitään valmiiksi</li></ul>' },
-  F: { title: '✅ Valmis', body: '<p>Kaikki toiveet on toteutettu. Agentti merkitsee idean valmiiksi.</p><ul><li>Status: <strong>Valmis</strong></li><li>Sovellus julkaistaan deploy-URL:iin: <code>deployBaseUrl/ideaId/</code></li><li>Linkki näkyy kanban-kortilla ja tiketin sisällä</li><li>Käyttäjä voi silti lisätä jatkotoiveita → uusi kierros alkaa katkoviivan kautta</li></ul>' },
-  G: { title: '🆕 Uusia pyyntöjä', body: '<p>Käyttäjä on lisännyt uusia toiveita kesken tai jälkeen toteutuksen.</p><ul><li>Kortti siirtyy <strong>"🤖💬 Lisäideoita!"</strong> -sarakkeeseen kanbanissa</li><li>Orchestrator käyttää <strong>"🆕 Uudet edellisen toteutuksen jälkeen"</strong> -nappia kopioidakseen vain uudet pyynnöt agentille</li><li>Vuoropuhelu Dreamer ↔ Orchestrator ↔ Agentti voi jatkua rajattomasti</li></ul>' },
-  X: { title: '🚫 Estetty', body: '<p>Turvatarkistus havaitsi haitallista sisältöä. Idea on estetty eikä sitä toteuteta.</p><ul><li>Status: <strong>Estetty</strong></li><li>Käyttäjä lisätään estolistalle automaattisesti</li><li>Estetty käyttäjä ei voi luoda uusia ideoita eikä kommentoida</li><li>Sovellus näyttää varoituksen käyttäjälle</li></ul>' }
+  fi: {
+    A: { title: '🦄 Idea syntyy', body: '<p><strong>Chief Dream Officer</strong> kirjautuu sovellukseen nimimerkillä ja luo uuden idean.</p><ul><li>Kirjoita tekstikenttään millä tahansa kielellä</li><li>Tai puhu ideasi mikrofonin kautta (suomi / englanti)</li><li>Idea saa uniikin ID:n (yyyyMMdd_hhmm_NNN)</li><li>Kanbanissa: <strong>Tuoreet ideat</strong> -sarake</li><li>Muut käyttäjät näkevät idean reaaliajassa</li></ul>' },
+    B: { title: '🧙‍♂️ Orchestrator ottaa vastuun', body: '<p><strong>Agent Farm Orchestrator</strong> (Tapio Pitkäranta tai Tommi Pajala) näkee uuden idean Kanbanissa ja ottaa sen vastuulleen.</p><ul><li>Klikkaa <strong>"Ota vastuulleni"</strong> — nimi lukittuu tikettiin transaktiolla</li><li>Orchestrator voi muokata idean ehdottajaa, poistaa kommentteja ja hallita tikettiä</li><li>Kaikki näkevät kenen vastuulla tiketti on — filtterit per orchestrator</li><li>Voi vapauttaa tiketin muille: <strong>"En ehdi — siirrän vastuun muille"</strong></li></ul>' },
+    CC: { title: '🤖 Agentin toimeksianto', body: '<p>Orchestrator kopioi käyttäjän pyynnöt Claude Code -agentille käyttöliittymän kautta.</p><ul><li><strong>📋 Kaikki pyynnöt</strong> — kopioi kaikki käyttäjäviestit tiketiltä</li><li><strong>🆕 Uudet edellisen toteutuksen jälkeen</strong> — vain uudet pyynnöt</li><li><strong>🤖 CC</strong> — yksittäisen viestin kohdalla kopioi vain se</li><li>Prompti sisältää automaattisesti ohjeen agentille raportoida aloitus ja lopetus tiketille</li></ul>' },
+    S: { title: '🔒 Orchestratorin turvatarkistus', body: '<p><strong>Orchestrator</strong> arvioi idean turvallisuuden ennen kuin agentti saa toimeksiannon.</p><ul><li>Komentoriviinjektiot, tiedostomanipulaatio, prompt injection → estetään</li><li>Verkkohyökkäykset, resurssien väärinkäyttö, käyttäjien häirintä → estetään</li><li>Haitallinen idea → status: <strong>Estetty</strong>, käyttäjä bannataan</li><li>Epäselvä idea → orchestrator pyytää lisätietoja ennen etenemistä</li></ul>' },
+    AS: { title: '🔒 Agentin turvatarkistus', body: '<p><strong>AI-agentti</strong> tekee oman turvatarkistuksen ennen toteutuksen aloittamista lukemalla <strong>AGENT_SAFETY.md</strong> -säännöt.</p><ul><li>Agentti analysoi toimeksiannon sisällön itsenäisesti</li><li>Jos agentti havaitsee riskin → <strong>hylkää toimeksiannon</strong></li><li>Agentti kirjoittaa kommentit ja perustelut tikettiin</li><li>Tiketti palaa orchestratorille uudelleenarvioitavaksi</li><li>Kaksiportainen tarkistus (ihminen + AI) estää haitalliset toimeksiannot</li></ul>' },
+    D: { title: '⚡ Agentti hommissa', body: '<p>Agentti aloittaa idean toteuttamisen. Kanbanissa kortti siirtyy <strong>"🤖 Agentti hommissa"</strong> -sarakkeeseen.</p><ul><li>Status: <strong>in-progress</strong></li><li>Agentti näkyy yläpalkin 🤖-laskurissa (agenttiläsnäolo)</li><li>Agentti kirjoittaa koodia, luo tiedostoja ja rakentaa sovelluksen</li><li>Kaikki muutokset näkyvät reaaliajassa Firestore onSnapshot -kuuntelulla</li></ul>' },
+    R: { title: '📝 Raportointi tiketille', body: '<p>Agentti raportoi edistymisen suoraan tiketin viestiketjuun.</p><ul><li>Komento: <code>node _agent.js reply</code> — kirjoita väliraportti</li><li>Agenttileima (stamp) näyttää viestiketjussa mihin asti on käsitelty</li><li><code>lastProcessedIndex</code> seuraa käsiteltyjen viestien rajaa</li><li>Agentti tiivistää ydinajatuksen 2–3 sanaan kanban-korttiin</li></ul>' },
+    E: { title: '💬 Lisäideoita?', body: '<p>Toteutuksen jälkeen tarkistetaan onko käyttäjä lisännyt uusia toiveita kesken työn.</p><ul><li>Kanbanissa: <strong>"🤖💬 Lisäideoita!"</strong> -sarake näyttää tiketit joissa uusia viestejä</li><li>Orchestrator näkee uudet viestit agenttileiman jälkeen</li><li>Jos uusia → orchestrator kopioi ne agentille (CC) → uusi kierros</li><li>Jos ei uusia → merkitään valmiiksi</li></ul>' },
+    F: { title: '✅ Valmis', body: '<p>Kaikki toiveet on toteutettu. Agentti merkitsee idean valmiiksi.</p><ul><li>Status: <strong>Valmis</strong></li><li>Sovellus julkaistaan deploy-URL:iin: <code>deployBaseUrl/ideaId/</code></li><li>Linkki näkyy kanban-kortilla ja tiketin sisällä</li><li>Käyttäjä voi silti lisätä jatkotoiveita → uusi kierros alkaa katkoviivan kautta</li></ul>' },
+    G: { title: '🆕 Uusia pyyntöjä', body: '<p>Käyttäjä on lisännyt uusia toiveita kesken tai jälkeen toteutuksen.</p><ul><li>Kortti siirtyy <strong>"🤖💬 Lisäideoita!"</strong> -sarakkeeseen kanbanissa</li><li>Orchestrator käyttää <strong>"🆕 Uudet edellisen toteutuksen jälkeen"</strong> -nappia kopioidakseen vain uudet pyynnöt agentille</li><li>Vuoropuhelu Dreamer ↔ Orchestrator ↔ Agentti voi jatkua rajattomasti</li></ul>' },
+    X: { title: '🚫 Estetty', body: '<p>Turvatarkistus havaitsi haitallista sisältöä. Idea on estetty eikä sitä toteuteta.</p><ul><li>Status: <strong>Estetty</strong></li><li>Käyttäjä lisätään estolistalle automaattisesti</li><li>Estetty käyttäjä ei voi luoda uusia ideoita eikä kommentoida</li><li>Sovellus näyttää varoituksen käyttäjälle</li></ul>' }
+  },
+  en: {
+    A: { title: '🦄 Idea is born', body: '<p><strong>Chief Dream Officer</strong> logs in with a nickname and creates a new idea.</p><ul><li>Type in the text field in any language</li><li>Or speak your idea via the microphone (Finnish / English)</li><li>The idea gets a unique ID (yyyyMMdd_hhmm_NNN)</li><li>On the Kanban board: <strong>New ideas</strong> column</li><li>Other users see the idea in real time</li></ul>' },
+    B: { title: '🧙‍♂️ Orchestrator takes ownership', body: '<p><strong>Agent Farm Orchestrator</strong> (Tapio Pitkäranta or Tommi Pajala) sees the new idea on the Kanban board and takes ownership.</p><ul><li>Click <strong>"Assign to me"</strong> — the name is locked to the ticket via transaction</li><li>Orchestrator can edit the proposer, delete comments and manage the ticket</li><li>Everyone sees who owns the ticket — filters per orchestrator</li><li>Can release the ticket: <strong>"Can\'t do it — passing it on"</strong></li></ul>' },
+    CC: { title: '🤖 Assign Agent for Execution', body: '<p>Orchestrator copies user requests to a Claude Code agent via the UI.</p><ul><li><strong>📋 All requests</strong> — copy all user messages from the ticket</li><li><strong>🆕 New since last implementation</strong> — only new requests</li><li><strong>🤖 CC</strong> — copy a single message</li><li>The prompt automatically includes instructions for the agent to report start and completion to the ticket</li></ul>' },
+    S: { title: '🔒 Orchestrator safety check', body: '<p>The <strong>Orchestrator</strong> evaluates the idea\'s safety before assigning it to an agent.</p><ul><li>Command injection, file manipulation, prompt injection → blocked</li><li>Network attacks, resource abuse, user harassment → blocked</li><li>Harmful idea → status: <strong>Blocked</strong>, user is banned</li><li>Unclear idea → orchestrator requests more details before proceeding</li></ul>' },
+    AS: { title: '🔒 Agent safety check', body: '<p>The <strong>AI agent</strong> performs its own safety check before starting implementation by reading <strong>AGENT_SAFETY.md</strong> rules.</p><ul><li>The agent independently analyses the assignment contents</li><li>If the agent detects a risk → <strong>rejects the assignment</strong></li><li>The agent writes comments and reasoning to the ticket</li><li>The ticket returns to the orchestrator for re-evaluation</li><li>Two-gate check (human + AI) prevents harmful assignments</li></ul>' },
+    D: { title: '⚡ Agent working', body: '<p>The agent starts implementing the idea. On the Kanban board the card moves to the <strong>"🤖 Agent working"</strong> column.</p><ul><li>Status: <strong>in-progress</strong></li><li>The agent appears in the top bar 🤖 counter (agent presence)</li><li>The agent writes code, creates files and builds the application</li><li>All changes are visible in real time via Firestore onSnapshot</li></ul>' },
+    R: { title: '📝 Report to ticket', body: '<p>The agent reports progress directly to the ticket thread.</p><ul><li>Command: <code>node _agent.js reply</code> — write a status report</li><li>Agent stamp shows in the thread how far processing has reached</li><li><code>lastProcessedIndex</code> tracks the boundary of processed messages</li><li>The agent summarizes the core idea in 2–3 words on the Kanban card</li></ul>' },
+    E: { title: '💬 More ideas?', body: '<p>After implementation, the system checks whether the user has added new wishes during the work.</p><ul><li>On the Kanban: <strong>"🤖💬 New wishes!"</strong> column shows tickets with new messages</li><li>Orchestrator sees new messages after the agent stamp</li><li>If new → orchestrator copies them to the agent (CC) → new round</li><li>If none → mark as done</li></ul>' },
+    F: { title: '✅ Done', body: '<p>All wishes have been implemented. The agent marks the idea as done.</p><ul><li>Status: <strong>Done</strong></li><li>Application is published to the deploy URL: <code>deployBaseUrl/ideaId/</code></li><li>Link is visible on the Kanban card and inside the ticket</li><li>The user can still add follow-up wishes → a new round begins via the dashed line</li></ul>' },
+    G: { title: '🆕 New requests', body: '<p>The user has added new wishes during or after implementation.</p><ul><li>The card moves to the <strong>"🤖💬 New wishes!"</strong> column on the Kanban</li><li>Orchestrator uses the <strong>"🆕 New since last implementation"</strong> button to copy only the new requests to the agent</li><li>The dialogue Dreamer ↔ Orchestrator ↔ Agent can continue indefinitely</li></ul>' },
+    X: { title: '🚫 Blocked', body: '<p>The safety check detected harmful content. The idea is blocked and will not be implemented.</p><ul><li>Status: <strong>Blocked</strong></li><li>The user is automatically added to the block list</li><li>A blocked user cannot create new ideas or comment</li><li>The application shows a warning to the user</li></ul>' }
+  }
 };
 
 window.flowStepClick = function(nodeId) {
-  const data = flowStepData[nodeId];
+  const langData = flowStepData[currentLang] || flowStepData.fi;
+  const data = langData[nodeId];
   if (!data) return;
   const panel = document.getElementById('flowStepInfo');
   document.getElementById('flowStepTitle').textContent = data.title;
@@ -1304,6 +1374,137 @@ window.flowStepClick = function(nodeId) {
   panel.style.display = 'block';
   panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 };
+
+function renderSwimlane() {
+  const isFi = (currentLang || 'fi') === 'fi';
+  const lanes = [
+    { role: isFi ? '🦄 Dreamer' : '🦄 Dreamer', color: '#dbeafe', border: '#3b82f6', text: '#1e3a5f',
+      steps: [
+        { id: 'A', icon: '💡', label: isFi ? 'Luo idea' : 'Create idea', col: 1 },
+        { id: 'G', icon: '💬', label: isFi ? 'Lisätoiveita' : 'New wishes', col: 7 }
+      ]},
+    { role: isFi ? '🧙‍♂️ Orchestrator' : '🧙‍♂️ Orchestrator', color: '#fae8ff', border: '#d946ef', text: '#701a75',
+      steps: [
+        { id: 'B', icon: '👤', label: isFi ? 'Ota vastuulle' : 'Take ownership', col: 2 },
+        { id: 'S', icon: '🔒', label: isFi ? 'Turvatarkistus' : 'Safety check', col: 3 },
+        { id: 'CC', icon: '🤖', label: isFi ? 'Toimeksianto' : 'Assign agent', col: 4 }
+      ]},
+    { role: isFi ? '🤖 AI-agentti' : '🤖 AI Agent', color: '#fef3c7', border: '#f59e0b', text: '#78350f',
+      steps: [
+        { id: 'AS', icon: '🔒', label: isFi ? 'Agentin tarkistus' : 'Agent check', col: 4.5 },
+        { id: 'D', icon: '⚡', label: isFi ? 'Toteutus' : 'Build', col: 5.5 },
+        { id: 'R', icon: '📝', label: isFi ? 'Raportointi' : 'Report', col: 6.5 },
+        { id: 'E', icon: '💬', label: isFi ? 'Lisäideoita?' : 'More ideas?', col: 8 }
+      ]},
+    { role: isFi ? '🖥️ Järjestelmä' : '🖥️ System', color: '#dcfce7', border: '#22c55e', text: '#14532d',
+      steps: [
+        { id: 'F', icon: '✅', label: isFi ? 'Valmis' : 'Done', col: 9 },
+        { id: 'X', icon: '🚫', label: isFi ? 'Estetty' : 'Blocked', col: 3, alt: true }
+      ]}
+  ];
+  const cols = 10;
+  const colW = 100;
+  const laneH = 80;
+  const headerW = 120;
+  const boxW = 84;
+  const boxH = 44;
+  const totalW = headerW + cols * colW;
+  const totalH = lanes.length * laneH + 40;
+
+  const pos = {};
+  lanes.forEach((lane, i) => {
+    lane.steps.forEach(step => {
+      pos[step.id] = {
+        cx: headerW + (step.col - 0.5) * colW,
+        cy: 30 + i * laneH + laneH / 2,
+        lane: i
+      };
+    });
+  });
+
+  let svg = `<svg viewBox="0 0 ${totalW} ${totalH}" style="width:100%;max-width:${totalW}px;font-family:'Inter','Segoe UI',system-ui,sans-serif" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<defs>
+    <marker id="slArrow" viewBox="0 0 10 6" refX="9" refY="3" markerWidth="7" markerHeight="5" orient="auto"><path d="M0,0 L10,3 L0,6 Z" fill="#94a3b8"/></marker>
+    <marker id="slArrowRed" viewBox="0 0 10 6" refX="9" refY="3" markerWidth="7" markerHeight="5" orient="auto"><path d="M0,0 L10,3 L0,6 Z" fill="#ef4444"/></marker>
+    <marker id="slArrowLoop" viewBox="0 0 10 6" refX="9" refY="3" markerWidth="7" markerHeight="5" orient="auto"><path d="M0,0 L10,3 L0,6 Z" fill="#f59e0b"/></marker>
+  </defs>`;
+
+  lanes.forEach((lane, i) => {
+    const y = 30 + i * laneH;
+    svg += `<rect x="0" y="${y}" width="${totalW}" height="${laneH}" rx="6" fill="${lane.color}" stroke="${lane.border}" stroke-width="1" opacity="0.45"/>`;
+    svg += `<text x="12" y="${y + laneH / 2 + 5}" font-size="11" font-weight="700" fill="${lane.text}">${lane.role}</text>`;
+    lane.steps.forEach(step => {
+      const cx = pos[step.id].cx;
+      const cy = pos[step.id].cy;
+      const rFill = step.alt ? '#fef2f2' : 'white';
+      const rStroke = step.alt ? '#ef4444' : lane.border;
+      svg += `<rect x="${cx - boxW/2}" y="${cy - boxH/2}" width="${boxW}" height="${boxH}" rx="10" fill="${rFill}" stroke="${rStroke}" stroke-width="1.5" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.08))"/>`;
+      svg += `<text x="${cx}" y="${cy - 5}" text-anchor="middle" font-size="16" dominant-baseline="central">${step.icon}</text>`;
+      svg += `<text x="${cx}" y="${cy + 14}" text-anchor="middle" font-size="8.5" fill="${lane.text}" font-weight="600">${step.label}</text>`;
+    });
+  });
+
+  function drawArrow(fromId, toId, opts = {}) {
+    const f = pos[fromId], t = pos[toId];
+    const x1 = f.cx + boxW/2;
+    const y1 = f.cy;
+    const x2 = t.cx - boxW/2;
+    const y2 = t.cy;
+    const stroke = opts.color || '#94a3b8';
+    const marker = opts.marker || 'url(#slArrow)';
+    const dash = opts.dash ? ` stroke-dasharray="${opts.dash}"` : '';
+    if (f.lane === t.lane) {
+      svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${stroke}" stroke-width="1.5"${dash} marker-end="${marker}"/>`;
+    } else {
+      const mx = (x1 + x2) / 2;
+      svg += `<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="${stroke}" stroke-width="1.5"${dash} marker-end="${marker}"/>`;
+    }
+  }
+
+  // A(Dreamer) → B(Orch) → S(Orch) → CC(Orch) → AS(Agent) → D(Agent) → R(Agent) → E(Orch) → F(System)
+  drawArrow('A', 'B');
+  drawArrow('B', 'S');
+  drawArrow('S', 'CC');
+  drawArrow('CC', 'AS');
+  drawArrow('AS', 'D');
+  drawArrow('D', 'R');
+  drawArrow('R', 'E');
+  drawArrow('E', 'F');
+
+  // AS -.-> B (agent rejects → back to orchestrator with comments)
+  const asP = pos['AS'], bP = pos['B'];
+  const asx = asP.cx - boxW/2;
+  const asy = asP.cy;
+  const bx2 = bP.cx;
+  const by2 = bP.cy + boxH/2;
+  svg += `<path d="M${asx},${asy} C${asx - 40},${asy} ${bx2 - 40},${by2 + 30} ${bx2},${by2}" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#slArrowRed)"/>`;
+  svg += `<text x="${(asx + bx2) / 2 - 20}" y="${asy + 4}" text-anchor="middle" font-size="7.5" fill="#ef4444" font-weight="600">${isFi ? 'Hylätty' : 'Rejected'}</text>`;
+
+  // E → G (yes new ideas)
+  const eP = pos['E'], gP = pos['G'];
+  const ex1 = eP.cx, ey1 = eP.cy - boxH/2;
+  const gx2 = gP.cx, gy2 = gP.cy + boxH/2;
+  svg += `<path d="M${ex1},${ey1} C${ex1},${ey1 - 25} ${gx2},${gy2 + 25} ${gx2},${gy2}" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6,4" marker-end="url(#slArrowLoop)"/>`;
+  const lmx = (ex1 + gx2) / 2, lmy = Math.min(ey1, gy2) - 18;
+  svg += `<text x="${lmx}" y="${lmy}" text-anchor="middle" font-size="8" fill="#f59e0b" font-weight="600">${isFi ? 'Kyllä' : 'Yes'}</text>`;
+
+  // G → S (loop back to orchestrator safety check)
+  const gx1 = gP.cx - boxW/2;
+  const gy1 = gP.cy;
+  const sx2 = pos['S'].cx;
+  const sy2 = pos['S'].cy - boxH/2;
+  svg += `<path d="M${gx1},${gy1} C${gx1 - 30},${gy1} ${sx2},${sy2 - 25} ${sx2},${sy2}" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6,4" marker-end="url(#slArrowLoop)"/>`;
+
+  // S → X (harmful → blocked)
+  const sP = pos['S'], xP = pos['X'];
+  svg += `<line x1="${sP.cx}" y1="${sP.cy + boxH/2}" x2="${xP.cx}" y2="${xP.cy - boxH/2}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#slArrowRed)"/>`;
+  const efMx = (eP.cx + boxW/2 + pos['F'].cx - boxW/2) / 2;
+  svg += `<text x="${efMx}" y="${eP.cy - 8}" text-anchor="middle" font-size="8" fill="#94a3b8" font-weight="600">${isFi ? 'Ei' : 'No'}</text>`;
+  svg += `<text x="${sP.cx + 12}" y="${(sP.cy + xP.cy) / 2}" font-size="8" fill="#ef4444" font-weight="600">${isFi ? 'Haitallinen' : 'Harmful'}</text>`;
+
+  svg += '</svg>';
+  document.getElementById('swimlaneChart').innerHTML = svg;
+}
 
 // ══════════════════════════════════════════════════════════════
 // ── Firebase Config ──
@@ -1388,6 +1589,8 @@ let recognition = null;
 let isRecording = false;
 let pendingSpeechText = '';
 let currentLang = localStorage.getItem('ideaagent_lang') || 'fi';
+renderMermaidChart();
+renderSwimlane();
 
 // ── i18n ──
 const i18n = {
@@ -1430,6 +1633,8 @@ const i18n = {
     kanbanEmpty: 'Ei ideoita',
     docsTitle: 'Työnkulku',
     docsSubtitle: 'Klikkaa kaavion vaihetta nähdäksesi lisätietoja',
+    swimlaneTitle: 'Prosessikaavio rooleittain',
+    swimlaneSubtitle: 'Uimaratanäkymä — kuka tekee mitäkin',
     statusLabelNew: 'Uusi',
     statusLabelProgress: '🤖 Agentti hommissa',
     statusLabelDone: 'Valmis',
@@ -1494,14 +1699,14 @@ const i18n = {
     copyUserIdeasTitle: 'Kopioi käyttäjien viestit',
     toastIdeasCopied: 'Käyttäjien viestit kopioitu leikepöydälle!',
     toastNoUserMessages: 'Ei käyttäjäviestejä kopioitavaksi.',
-    ccMenuTitle: '🤖 Copy to Claude Code Agent',
+    ccMenuTitle: '🤖 Agentin toimeksianto',
     ccSingle: 'Tämä pyyntö',
     ccSingleDesc: 'Kopioi vain tämä käyttäjän viesti',
     ccAll: 'Kaikki pyynnöt tiketillä',
     ccAllDesc: 'Kopioi kaikki käyttäjäviestit',
     ccAfterAgent: 'Uudet edellisen toteutuksen jälkeen',
     ccAfterAgentDesc: 'Pyynnöt edellisen agentin käsittelyn jälkeen',
-    toastCCCopied: 'Claude Code -prompti kopioitu leikepöydälle!',
+    toastCCCopied: 'Agentin prompti kopioitu leikepöydälle!',
     toastCCNoMsgs: 'Ei uusia pyyntöjä kopioitavaksi.',
     mentionsTitle: '🔔 Maininnat',
     mentionsMarkAll: 'Merkitse luetuksi',
@@ -1548,6 +1753,8 @@ const i18n = {
     kanbanEmpty: 'No ideas',
     docsTitle: 'Workflow',
     docsSubtitle: 'Click a step in the diagram for details',
+    swimlaneTitle: 'Process diagram by role',
+    swimlaneSubtitle: 'Swimlane view — who does what',
     statusLabelNew: 'New',
     statusLabelProgress: '🤖 Agent working',
     statusLabelDone: 'Done',
@@ -1612,14 +1819,14 @@ const i18n = {
     copyUserIdeasTitle: 'Copy user messages',
     toastIdeasCopied: 'User messages copied to clipboard!',
     toastNoUserMessages: 'No user messages to copy.',
-    ccMenuTitle: '🤖 Copy to Claude Code Agent',
+    ccMenuTitle: '🤖 Assign Agent for Execution',
     ccSingle: 'This request',
     ccSingleDesc: 'Copy only this user message',
     ccAll: 'All requests on ticket',
     ccAllDesc: 'Copy all user messages',
     ccAfterAgent: 'New since last implementation',
     ccAfterAgentDesc: 'Requests after last agent processing',
-    toastCCCopied: 'Claude Code prompt copied to clipboard!',
+    toastCCCopied: 'Agent prompt copied to clipboard!',
     toastCCNoMsgs: 'No new requests to copy.',
     mentionsTitle: '🔔 Mentions',
     mentionsMarkAll: 'Mark all read',
@@ -1641,6 +1848,7 @@ function setLang(lang) {
   const speechLangEl = document.getElementById('speechLang');
   if (speechLangEl) speechLangEl.value = lang === 'en' ? 'en-US' : 'fi-FI';
   applyStaticTranslations();
+  renderMermaidChart();
   renderAll();
   if (document.getElementById('tabHelp').style.display !== 'none') renderHelp();
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
@@ -1726,6 +1934,9 @@ function applyStaticTranslations() {
 
   el('docsTitle', t('docsTitle'));
   el('docsSubtitle', t('docsSubtitle'));
+  el('swimlaneTitle', t('swimlaneTitle'));
+  el('swimlaneSubtitle', t('swimlaneSubtitle'));
+  renderSwimlane();
   el('logoutBtn', t('logout'));
 
   if (currentUser) showHeaderRole();
