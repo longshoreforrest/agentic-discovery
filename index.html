@@ -2709,11 +2709,9 @@ async function submitIdea() {
 
   try {
     await saveIdea(ideaData);
-    ideas.unshift(ideaData);
     document.getElementById('ideaText').value = '';
     createMentions(text, ideaData.ideaId, currentUser);
     showToast(t('toastIdeaSent'));
-    renderAll();
   } catch(e) {
     console.error('submitIdea:', e);
     showToast(t('toastError'));
