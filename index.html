@@ -959,7 +959,7 @@ body {
         <div style="margin-bottom:24px;padding:20px 24px;background:linear-gradient(135deg,#ecfdf5,#eff6ff);border:1.5px solid #86efac;border-radius:14px">
           <div style="font-size:18px;font-weight:700;color:#166534;margin-bottom:8px" id="appsTitle">🚀 Siili Site Tour 2026 — Sovellusaihiot</div>
           <p style="font-size:14px;color:#334155;line-height:1.6;margin-bottom:12px" id="appsIntro">
-            Siili Solutions kiertää Suomen toimipisteet ja jokaisella paikkakunnalla työntekijät ideoivat sovelluksia jotka AI-agentit toteuttavat livenä. Tämä on kokoelma kaikista Tourin aikana syntyneistä sovellusaihioista — jokainen rakennettu Claude Code -agentin avulla minuuteissa.
+            Siili Solutions kiertää Suomen toimipisteet ja jokaisella paikkakunnalla työntekijät ideoivat sovelluksia jotka AI-agentit toteuttavat livenä. Tämä on kokoelma kaikista Tourin aikana syntyneistä sovellusaihioista — jokainen rakennettu AI-agentin avulla minuuteissa.
           </p>
           <a href="https://rapid-agent-prototypes-af869c.gitlab-siili.io/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:white;border:1.5px solid #86efac;border-radius:10px;font-size:14px;font-weight:600;color:#166534;text-decoration:none;transition:all 0.15s" onmouseover="this.style.background='#f0fdf4';this.style.borderColor='#22c55e'" onmouseout="this.style.background='white';this.style.borderColor='#86efac'">🔗 <span id="appsLinkText">Avaa kaikki sovellukset ↗</span></a>
         </div>
@@ -1339,7 +1339,7 @@ const flowStepData = {
   fi: {
     A: { title: '🦄 Idea syntyy', body: '<p><strong>Chief Dream Officer</strong> kirjautuu sovellukseen nimimerkillä ja luo uuden idean.</p><ul><li>Kirjoita tekstikenttään millä tahansa kielellä</li><li>Tai puhu ideasi mikrofonin kautta (suomi / englanti)</li><li>Idea saa uniikin ID:n (yyyyMMdd_hhmm_NNN)</li><li>Kanbanissa: <strong>Tuoreet ideat</strong> -sarake</li><li>Muut käyttäjät näkevät idean reaaliajassa</li></ul>' },
     B: { title: '🧙‍♂️ Orchestrator ottaa vastuun', body: '<p><strong>Agent Farm Orchestrator</strong> (Tapio Pitkäranta tai Tommi Pajala) näkee uuden idean Kanbanissa ja ottaa sen vastuulleen.</p><ul><li>Klikkaa <strong>"Ota vastuulleni"</strong> — nimi lukittuu tikettiin transaktiolla</li><li>Orchestrator voi muokata idean ehdottajaa, poistaa kommentteja ja hallita tikettiä</li><li>Kaikki näkevät kenen vastuulla tiketti on — filtterit per orchestrator</li><li>Voi vapauttaa tiketin muille: <strong>"En ehdi — siirrän vastuun muille"</strong></li></ul>' },
-    CC: { title: '🤖 Agentin toimeksianto', body: '<p>Orchestrator kopioi käyttäjän pyynnöt Claude Code -agentille käyttöliittymän kautta.</p><ul><li><strong>📋 Kaikki pyynnöt</strong> — kopioi kaikki käyttäjäviestit tiketiltä</li><li><strong>🆕 Uudet edellisen toteutuksen jälkeen</strong> — vain uudet pyynnöt</li><li><strong>🤖 CC</strong> — yksittäisen viestin kohdalla kopioi vain se</li><li>Prompti sisältää automaattisesti ohjeen agentille raportoida aloitus ja lopetus tiketille</li></ul>' },
+    CC: { title: '🤖 Agentin toimeksianto', body: '<p>Orchestrator kopioi käyttäjän pyynnöt AI-agentille käyttöliittymän kautta.</p><ul><li><strong>📋 Kaikki pyynnöt</strong> — kopioi kaikki käyttäjäviestit tiketiltä</li><li><strong>🆕 Uudet edellisen toteutuksen jälkeen</strong> — vain uudet pyynnöt</li><li><strong>🤖 CC</strong> — yksittäisen viestin kohdalla kopioi vain se</li><li>Prompti sisältää automaattisesti ohjeen agentille raportoida aloitus ja lopetus tiketille</li></ul>' },
     S: { title: '🔒 Orchestratorin turvatarkistus', body: '<p><strong>Orchestrator</strong> arvioi idean turvallisuuden ennen kuin agentti saa toimeksiannon.</p><ul><li>Komentoriviinjektiot, tiedostomanipulaatio, prompt injection → estetään</li><li>Verkkohyökkäykset, resurssien väärinkäyttö, käyttäjien häirintä → estetään</li><li>Haitallinen idea → status: <strong>Estetty</strong>, käyttäjä bannataan</li><li>Epäselvä idea → orchestrator pyytää lisätietoja ennen etenemistä</li></ul>' },
     AS: { title: '🔒 Agentin turvatarkistus', body: '<p><strong>AI-agentti</strong> tekee oman turvatarkistuksen ennen toteutuksen aloittamista lukemalla <strong>AGENT_SAFETY.md</strong> -säännöt.</p><ul><li>Agentti analysoi toimeksiannon sisällön itsenäisesti</li><li>Jos agentti havaitsee riskin → <strong>hylkää toimeksiannon</strong></li><li>Agentti kirjoittaa kommentit ja perustelut tikettiin</li><li>Tiketti palaa orchestratorille uudelleenarvioitavaksi</li><li>Kaksiportainen tarkistus (ihminen + AI) estää haitalliset toimeksiannot</li></ul>' },
     D: { title: '⚡ Agentti hommissa', body: '<p>Agentti aloittaa idean toteuttamisen. Kanbanissa kortti siirtyy <strong>"🤖 Agentti hommissa"</strong> -sarakkeeseen.</p><ul><li>Status: <strong>in-progress</strong></li><li>Agentti näkyy yläpalkin 🤖-laskurissa (agenttiläsnäolo)</li><li>Agentti kirjoittaa koodia, luo tiedostoja ja rakentaa sovelluksen</li><li>Kaikki muutokset näkyvät reaaliajassa Firestore onSnapshot -kuuntelulla</li></ul>' },
@@ -1352,7 +1352,7 @@ const flowStepData = {
   en: {
     A: { title: '🦄 Idea is born', body: '<p><strong>Chief Dream Officer</strong> logs in with a nickname and creates a new idea.</p><ul><li>Type in the text field in any language</li><li>Or speak your idea via the microphone (Finnish / English)</li><li>The idea gets a unique ID (yyyyMMdd_hhmm_NNN)</li><li>On the Kanban board: <strong>New ideas</strong> column</li><li>Other users see the idea in real time</li></ul>' },
     B: { title: '🧙‍♂️ Orchestrator takes ownership', body: '<p><strong>Agent Farm Orchestrator</strong> (Tapio Pitkäranta or Tommi Pajala) sees the new idea on the Kanban board and takes ownership.</p><ul><li>Click <strong>"Assign to me"</strong> — the name is locked to the ticket via transaction</li><li>Orchestrator can edit the proposer, delete comments and manage the ticket</li><li>Everyone sees who owns the ticket — filters per orchestrator</li><li>Can release the ticket: <strong>"Can\'t do it — passing it on"</strong></li></ul>' },
-    CC: { title: '🤖 Assign Agent for Execution', body: '<p>Orchestrator copies user requests to a Claude Code agent via the UI.</p><ul><li><strong>📋 All requests</strong> — copy all user messages from the ticket</li><li><strong>🆕 New since last implementation</strong> — only new requests</li><li><strong>🤖 CC</strong> — copy a single message</li><li>The prompt automatically includes instructions for the agent to report start and completion to the ticket</li></ul>' },
+    CC: { title: '🤖 Assign Agent for Execution', body: '<p>Orchestrator copies user requests to the AI agent via the UI.</p><ul><li><strong>📋 All requests</strong> — copy all user messages from the ticket</li><li><strong>🆕 New since last implementation</strong> — only new requests</li><li><strong>🤖 CC</strong> — copy a single message</li><li>The prompt automatically includes instructions for the agent to report start and completion to the ticket</li></ul>' },
     S: { title: '🔒 Orchestrator safety check', body: '<p>The <strong>Orchestrator</strong> evaluates the idea\'s safety before assigning it to an agent.</p><ul><li>Command injection, file manipulation, prompt injection → blocked</li><li>Network attacks, resource abuse, user harassment → blocked</li><li>Harmful idea → status: <strong>Blocked</strong>, user is banned</li><li>Unclear idea → orchestrator requests more details before proceeding</li></ul>' },
     AS: { title: '🔒 Agent safety check', body: '<p>The <strong>AI agent</strong> performs its own safety check before starting implementation by reading <strong>AGENT_SAFETY.md</strong> rules.</p><ul><li>The agent independently analyses the assignment contents</li><li>If the agent detects a risk → <strong>rejects the assignment</strong></li><li>The agent writes comments and reasoning to the ticket</li><li>The ticket returns to the orchestrator for re-evaluation</li><li>Two-gate check (human + AI) prevents harmful assignments</li></ul>' },
     D: { title: '⚡ Agent working', body: '<p>The agent starts implementing the idea. On the Kanban board the card moves to the <strong>"🤖 Agent working"</strong> column.</p><ul><li>Status: <strong>in-progress</strong></li><li>The agent appears in the top bar 🤖 counter (agent presence)</li><li>The agent writes code, creates files and builds the application</li><li>All changes are visible in real time via Firestore onSnapshot</li></ul>' },
@@ -2086,7 +2086,7 @@ function renderAgentPresence() {
     return `<div style="display:flex;align-items:center;gap:10px;padding:8px 6px;${i < sorted.length - 1 ? 'border-bottom:1px solid #f1f5f9;' : ''}">
       <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;box-shadow:0 2px 8px rgba(99,102,241,0.3)">🤖</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600;color:var(--text)">${esc(s.agent || 'Claude Code')} ${ideaTag}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text)">${esc(s.agent || 'Agent')} ${ideaTag}</div>
         ${summaryLine}
         <div style="font-size:11px;color:#94a3b8">🖥️ ${esc(s.host || '?')} &middot; ${recency}</div>
       </div>
@@ -2806,7 +2806,7 @@ function copyUserMessages(ideaId) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// ── Copy to Claude Code Agent ──
+// ── Copy to Agent ──
 // ══════════════════════════════════════════════════════════════
 
 let activeCCMenu = null;
@@ -3375,7 +3375,7 @@ function renderIdeaDetail(idea) {
       const isMarked = canDelete && pendingDeletes[idea.ideaId] && pendingDeletes[idea.ideaId].has(idx);
       const deleteBtn = canDelete ? `<button class="msg-delete-btn${isMarked ? ' marked' : ''}" onclick="event.stopPropagation();toggleDeleteMark('${idea.ideaId}',${idx})" title="${t('deleteCommentTitle')}">🗑️</button>` : '';
       const canCopyCC = isOrchestrator(currentUser) && m.role === 'user';
-      const ccBtn = canCopyCC ? `<button class="cc-copy-btn" onclick="event.stopPropagation();copyToClaudeCode('${idea.ideaId}','single',${idx})" title="${currentLang === 'fi' ? '🤖 Kopioi vain tämä pyyntö Claude Code Agentille' : '🤖 Copy only this request to Claude Code Agent'}">🤖 CC</button>` : '';
+      const ccBtn = canCopyCC ? `<button class="cc-copy-btn" onclick="event.stopPropagation();copyToClaudeCode('${idea.ideaId}','single',${idx})" title="${currentLang === 'fi' ? '🤖 Kopioi vain tämä pyyntö agentille' : '🤖 Copy only this request to the agent'}">🤖 CC</button>` : '';
       const markedClass = isMarked ? ' marked-delete' : '';
 
       return stampHtml + `<div class="msg-bubble ${bubbleClass}${markedClass}">
@@ -3951,7 +3951,7 @@ function renderSlides() {
           { num: 2, icon: '📋', title: 'Kanban Board', desc: 'Idea appears on the board as a new ticket. Visible to everyone in real-time.', color: '#064AAC', bg: '#e3f2fd', border: '#90caf9', who: '🦄' },
           { num: 3, icon: '🧙‍♂️', title: 'Orchestrator Claims', desc: 'The orchestrator takes ownership. Reviews the idea, checks feasibility.', color: '#7b1fa2', bg: '#f3e5f5', border: '#ce93d8', who: '🧙‍♂️' },
           { num: 4, icon: '🛡️', title: 'Safety Check', desc: 'AGENT_SAFETY.md rules enforced. No harmful code, no data deletion, no shenanigans.', color: '#7b1fa2', bg: '#f3e5f5', border: '#ce93d8', who: '🧙‍♂️🤖' },
-          { num: 5, icon: '🤖', title: 'AI Agent Builds', desc: 'Claude Code agent reads the idea, writes code, creates the application autonomously.', color: '#2e7d32', bg: '#e8f5e9', border: '#a5d6a7', who: '🤖' },
+          { num: 5, icon: '🤖', title: 'AI Agent Builds', desc: 'The AI agent reads the idea, writes code, creates the application autonomously.', color: '#2e7d32', bg: '#e8f5e9', border: '#a5d6a7', who: '🤖' },
           { num: 6, icon: '💬', title: 'Live Reporting', desc: 'Agent posts progress to the ticket thread. Everyone can follow along in real-time.', color: '#2e7d32', bg: '#e8f5e9', border: '#a5d6a7', who: '🤖' },
           { num: 7, icon: '🚀', title: 'Deploy & Deliver', desc: 'App is pushed to Git, deployed to its own URL. The dreamer clicks and sees their idea alive.', color: '#e65100', bg: '#fff3e0', border: '#ffcc80', who: '🤖' },
         ].map(s => `
@@ -4102,7 +4102,7 @@ function renderHelp() {
     const heroData = {
       dreamer: { emoji: '🦄', title: 'Chief Dream Officer', quote: 'You dream it — an army of tireless robots builds it while you sip coffee.', bg: '#eff6ff', color: '#2563eb', border: '#93c5fd' },
       orchestrator: { emoji: '🧙‍♂️', title: 'Agent Farm Orchestrator', quote: 'You herd the robots. They herd the code. Nobody herds you.', bg: '#fdf4ff', color: '#a21caf', border: '#e879f9' },
-      agent: { emoji: '🤖', title: 'AI Agent (Claude Code)', quote: 'I live to serve the dreamers. The orchestrators keep me honest. The code is my canvas.', bg: '#ede9fe', color: '#6d28d9', border: '#a78bfa' }
+      agent: { emoji: '🤖', title: 'AI Agent', quote: 'I live to serve the dreamers. The orchestrators keep me honest. The code is my canvas.', bg: '#ede9fe', color: '#6d28d9', border: '#a78bfa' }
     }[viewRole];
     heroHtml = `<div class="help-hero">
       <h2>${heroData.emoji} ${heroData.title}</h2>
@@ -4211,7 +4211,7 @@ function renderOverviewHelp() {
         <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
           <div style="text-align:center;flex-shrink:0">
             <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#ede9fe,#ddd6fe);display:flex;align-items:center;justify-content:center;font-size:44px;box-shadow:0 4px 12px rgba(139,92,246,0.2);animation:agentPulse 2s ease-in-out infinite">🤖</div>
-            <div style="font-size:13px;font-weight:700;color:#6d28d9;margin-top:6px">AI Agent<br>(Claude Code)</div>
+            <div style="font-size:13px;font-weight:700;color:#6d28d9;margin-top:6px">AI Agent</div>
           </div>
           <div style="flex:1;min-width:200px">
             <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px">"Koodaan sen valmiiksi!"</div>
@@ -4439,7 +4439,7 @@ function renderOrchestratorHelp() {
         <div class="comic-avatar" style="background:#ede9fe">🤖</div>
         <div class="comic-bubble">
           <strong>Step 3: Command the Robots</strong><br>
-          You run the Claude Code agent. It reads the idea, checks safety, and builds the app.
+          You run the AI agent. It reads the idea, checks safety, and builds the app.
           You watch the agent presence indicator light up — 🤖 in the header means robots are working.
           The <span class="action-tag" style="background:#fef3c7;color:#d97706">agent stamp</span>
           in the message thread shows exactly what's been processed.
@@ -4485,7 +4485,7 @@ function renderOrchestratorHelp() {
         <div class="power-card" style="border-color:#e879f9">
           <div class="power-icon">🤖</div>
           <div class="power-title">Run Agents</div>
-          <div class="power-desc">Launch Claude Code to implement ideas. The agent reads, builds, deploys — you orchestrate.</div>
+          <div class="power-desc">Launch the AI agent to implement ideas. It reads, builds, deploys — you orchestrate.</div>
         </div>
         <div class="power-card" style="border-color:#e879f9">
           <div class="power-icon">🛡️</div>
