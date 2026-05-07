@@ -39,19 +39,25 @@ categories/{CATEGORY_ID}
   "createdAt": "ISO 8601 aikaleima",
   "createdBy": "kuka loi",
   "description": "Lyhyt kuvaus",
-  "blockedUsers": []
+  "blockedUsers": [],
+  "encrypted": true/false (valinnainen, oletus false)
 }
 ```
+
+Kun `encrypted: true`, deploy-URL:t sisältävät automaattisesti
+`?password=CATEGORY_ID` -parametrin. Tämä toimii yhdessä publish-skriptin
+AES-256-GCM-salauksen kanssa: salattu sivu purkautuu automaattisesti URL:n
+salasanalla.
 
 ---
 
 ## Kategoriarekisteri
 
-| Kategoria-ID | Nimi | Luotu | Kuvaus |
-|---|---|---|---|
-| Siili-Site-Tour-2026 | Siili Site Tour 2026 | 2026-04-29 | Siili Site Tour 2026 -tapahtuman ideat |
-| Ilmatieteen_Laitos_20260504 | Ilmatieteen laitos — 4.5.2026 | 2026-05-01 | Ilmatieteen laitoksen idea-/sovellussessio 4.5.2026 |
-| SOK-Markkinointi | SOK Markkinointi | 2026-05-07 | SOK Markkinoinnin idea- ja sovellussessio |
+| Kategoria-ID | Nimi | Luotu | Salattu | Kuvaus |
+|---|---|---|---|---|
+| Siili-Site-Tour-2026 | Siili Site Tour 2026 | 2026-04-29 | ei | Siili Site Tour 2026 -tapahtuman ideat |
+| Ilmatieteen_Laitos_20260504 | Ilmatieteen laitos — 4.5.2026 | 2026-05-01 | ei | Ilmatieteen laitoksen idea-/sovellussessio 4.5.2026 |
+| SOK-Markkinointi | SOK Markkinointi | 2026-05-07 | kyllä | SOK Markkinoinnin idea- ja sovellussessio |
 
 ---
 

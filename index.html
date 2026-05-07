@@ -1224,6 +1224,10 @@ body {
           </div>
           <input type="text" id="newCatDesc" placeholder="Kuvaus (vapaaehtoinen)" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:13px;font-family:inherit;margin-bottom:8px">
           <input type="text" id="newCatDeployUrl" placeholder="Deploy Base URL, esim. https://example.io/apps" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:13px;font-family:inherit;margin-bottom:8px">
+          <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer;font-size:13px;color:#334155">
+            <input type="checkbox" id="newCatEncrypted" style="width:16px;height:16px;accent-color:#6366f1;cursor:pointer">
+            🔐 Salattu (salasana = kategorian ID)
+          </label>
           <button onclick="adminCreateCategory()" style="padding:8px 16px;background:linear-gradient(135deg,#4f46e5,#4338ca);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">+ Luo kategoria</button>
           <div id="newCatStatus" style="margin-top:8px;font-size:12px"></div>
         </div>
@@ -1527,6 +1531,7 @@ const CATEGORY = _urlCategory || window.__IDEAAGENT_CATEGORY || 'CATEGORY-MISSIN
 const CATEGORY_VALID = CATEGORY !== 'CATEGORY-MISSING';
 let deployBaseUrl = '';
 let gitDirPrefix = '';
+let categoryEncrypted = false;
 const ORCHESTRATORS = ['Tapio Pitkäranta', 'Tommi Pajala'];
 const ADMIN_USER = 'Tapio Pitkäranta';
 
@@ -1572,6 +1577,7 @@ if (CATEGORY_VALID) {
         if (data.name) document.getElementById('loginSubtitle').textContent = data.name;
         if (data.deployBaseUrl) deployBaseUrl = data.deployBaseUrl.replace(/\/+$/, '');
         if (data.gitDirPrefix !== undefined) gitDirPrefix = data.gitDirPrefix;
+        if (data.encrypted) categoryEncrypted = true;
       }
     } catch(e) { /* ignore */ }
   })();
@@ -2381,10 +2387,14 @@ function renderStatistics() {
       const isCurrent = c.id === CATEGORY;
       const appUrl = `${appBase}?category=${encodeURIComponent(c.id)}${currentUser ? `&name=${encodeURIComponent(currentUser)}` : ''}`;
       const catDeployUrl = c.deployBaseUrl ? `<div style="font-size:11px;color:#64748b;margin-top:2px">🌐 ${esc(c.deployBaseUrl)}</div>` : '';
+      const encBadge = c.encrypted
+        ? `<span style="font-size:10px;background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:8px;font-weight:700;cursor:pointer" onclick="event.stopPropagation();toggleCategoryEncrypted('${esc(c.id)}',false)" title="Klikkaa poistaaksesi salauksen">🔐 salattu</span>`
+        : `<span style="font-size:10px;background:#f0fdf4;color:#16a34a;padding:2px 8px;border-radius:8px;font-weight:700;cursor:pointer" onclick="event.stopPropagation();toggleCategoryEncrypted('${esc(c.id)}',true)" title="Klikkaa ottaaksesi salauksen käyttöön">🔓 julkinen</span>`;
       return `<div style="padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:6px;background:${isCurrent ? '#eff6ff' : 'white'}">
-        <div style="display:flex;align-items:center;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <code style="font-size:12px;color:#4338ca;background:#f1f5f9;padding:2px 6px;border-radius:4px">${esc(c.id)}</code>
           <div style="flex:1;font-size:13px;color:#334155">${esc(c.name || '—')}${c.description ? ` · <span style="color:#64748b;font-size:12px">${esc(c.description)}</span>` : ''}</div>
+          ${encBadge}
           ${isCurrent ? '<span style="font-size:10px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:8px;font-weight:700">aktiivinen</span>' : ''}
           <a href="${esc(appUrl)}" target="_blank" rel="noopener" title="Avaa kategoria uudessa välilehdessä" style="font-size:11px;background:linear-gradient(135deg,#4f46e5,#4338ca);color:white;padding:4px 10px;border-radius:8px;text-decoration:none;font-weight:700;white-space:nowrap">Avaa ↗</a>
         </div>
@@ -2399,11 +2409,13 @@ async function adminCreateCategory() {
   const nameEl = document.getElementById('newCatName');
   const descEl = document.getElementById('newCatDesc');
   const deployUrlEl = document.getElementById('newCatDeployUrl');
+  const encryptedEl = document.getElementById('newCatEncrypted');
   const statusEl = document.getElementById('newCatStatus');
   const id = idEl.value.trim();
   const name = nameEl.value.trim();
   const desc = descEl.value.trim();
   const catDeployUrl = (deployUrlEl.value || '').trim().replace(/\/+$/, '');
+  const catEncrypted = encryptedEl.checked;
   if (!id || !/^[A-Za-z0-9_\-]+$/.test(id)) {
     statusEl.innerHTML = '<span style="color:#dc2626">ID puuttuu tai sisältää kiellettyjä merkkejä (vain A-Z, a-z, 0-9, _, -).</span>';
     return;
@@ -2428,10 +2440,11 @@ async function adminCreateCategory() {
       blockedUsers: []
     };
     if (catDeployUrl) catData.deployBaseUrl = catDeployUrl;
+    if (catEncrypted) catData.encrypted = true;
     await ref.set(catData);
     const url = `${window.location.origin}${window.location.pathname}?category=${encodeURIComponent(id)}`;
     statusEl.innerHTML = `<span style="color:#059669">✅ Luotu. Linkki: <a href="${esc(url)}" target="_blank" style="color:#4338ca">${esc(url)}</a></span>`;
-    idEl.value = ''; nameEl.value = ''; descEl.value = ''; deployUrlEl.value = '';
+    idEl.value = ''; nameEl.value = ''; descEl.value = ''; deployUrlEl.value = ''; encryptedEl.checked = false;
     loadAndRenderStatistics();
   } catch(e) {
     console.warn('adminCreateCategory:', e);
@@ -2457,6 +2470,23 @@ async function editDeployBaseUrl() {
     showToast(currentLang === 'fi' ? 'Deploy URL päivitetty' : 'Deploy URL updated');
   } catch(e) {
     console.error('editDeployBaseUrl:', e);
+    showToast(t('toastError'));
+  }
+}
+
+async function toggleCategoryEncrypted(catId, enable) {
+  if (!isAdmin(currentUser)) return;
+  const label = enable ? 'Ota salaus käyttöön' : 'Poista salaus';
+  if (!confirm(`${label}: ${catId}?`)) return;
+  try {
+    const update = enable ? { encrypted: true } : { encrypted: firebase.firestore.FieldValue.delete() };
+    await db.collection('categories').doc(catId).update(update);
+    if (catId === CATEGORY) categoryEncrypted = enable;
+    loadAndRenderStatistics();
+    renderAll();
+    showToast(enable ? 'Salaus käyttöön' : 'Salaus poistettu');
+  } catch(e) {
+    console.error('toggleCategoryEncrypted:', e);
     showToast(t('toastError'));
   }
 }
@@ -3016,6 +3046,12 @@ function defaultGitDir(ideaId) {
   return `${gitDirPrefix}${ideaId}`;
 }
 
+function buildDeployUrl(idea) {
+  const base = `${deployBaseUrl}/${idea.gitDir || defaultGitDir(idea.ideaId)}/`;
+  if (categoryEncrypted) return `${base}?password=${encodeURIComponent(CATEGORY)}`;
+  return base;
+}
+
 function copyMkdir(ideaId) {
   const idea = ideas.find(i => i.ideaId === ideaId);
   const dir = (idea && idea.gitDir) || defaultGitDir(ideaId);
@@ -3281,7 +3317,7 @@ function renderKanbanCard(idea) {
   const summaryIcon = hasAgentSummary ? '🤖 ' : '';
   const msgCount = (idea.messages || []).length;
   const msgBadge = msgCount > 1 ? `${msgCount} ${t('messages')}` : '';
-  const deployUrl = `${deployBaseUrl}/${idea.gitDir || defaultGitDir(idea.ideaId)}/`;
+  const deployUrl = buildDeployUrl(idea);
   return `<div class="kanban-card" onclick="openIdea('${idea.ideaId}')">
     <div class="kanban-card-author">
       <span style="width:16px;height:16px;border-radius:50%;background:${color};color:white;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:700">${initials}</span>
@@ -3497,10 +3533,11 @@ function renderIdeaDetail(idea) {
     ${isAdmin(currentUser) ? `<div style="margin:8px 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
       <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;font-size:12px;color:#92400e;font-family:monospace;font-weight:500">🌐 ${deployBaseUrl || '<em>ei asetettu</em>'}</span>
       <button onclick="event.stopPropagation();editDeployBaseUrl()" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:white;border:1.5px solid #fbbf24;border-radius:8px;font-size:12px;font-weight:500;color:#92400e;cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.borderColor='#f59e0b';this.style.background='#fffbeb'" onmouseout="this.style.borderColor='#fbbf24';this.style.background='white'">${currentLang === 'fi' ? '✏️ Deploy URL' : '✏️ Deploy URL'}</button>
+      ${categoryEncrypted ? '<span style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;font-size:12px;font-weight:600;color:#dc2626">🔐 Salattu</span>' : ''}
     </div>` : ''}
     <div style="margin:8px 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-      ${isOrchestrator(currentUser) && deployBaseUrl ? `<a href="${deployBaseUrl}/${idea.gitDir || defaultGitDir(idea.ideaId)}/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;font-size:13px;color:#4338ca;text-decoration:none;font-weight:500">🔗 ${deployBaseUrl}/${idea.gitDir || defaultGitDir(idea.ideaId)}/ ↗</a>` : ''}
-      ${idea.appUrl ? `<a href="${esc(idea.appUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#ecfdf5;border:1px solid #86efac;border-radius:8px;font-size:13px;color:#166534;text-decoration:none;font-weight:500">${t('appLink')}</a>` : (deployBaseUrl ? `<a href="${deployBaseUrl}/${idea.gitDir || defaultGitDir(idea.ideaId)}/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#ecfdf5;border:1px solid #86efac;border-radius:8px;font-size:13px;color:#166534;text-decoration:none;font-weight:500">${t('appLink')}</a>` : '')}
+      ${isOrchestrator(currentUser) && deployBaseUrl ? `<a href="${buildDeployUrl(idea)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;font-size:13px;color:#4338ca;text-decoration:none;font-weight:500">🔗 ${deployBaseUrl}/${idea.gitDir || defaultGitDir(idea.ideaId)}/ ↗</a>` : ''}
+      ${idea.appUrl ? `<a href="${esc(idea.appUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#ecfdf5;border:1px solid #86efac;border-radius:8px;font-size:13px;color:#166534;text-decoration:none;font-weight:500">${t('appLink')}</a>` : (deployBaseUrl ? `<a href="${buildDeployUrl(idea)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#ecfdf5;border:1px solid #86efac;border-radius:8px;font-size:13px;color:#166534;text-decoration:none;font-weight:500">${t('appLink')}</a>` : '')}
       ${isOrchestrator(currentUser) ? `<button onclick="event.stopPropagation();editAppUrl('${idea.ideaId}')" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:white;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;color:var(--text-light);cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-light)'">${idea.appUrl ? '✏️' : '➕'} ${currentLang === 'fi' ? 'Muokkaa URL' : 'Edit URL'}</button>` : ''}
       <button onclick="event.stopPropagation();closeIdea();inviteToIdea('${idea.ideaId}')" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:white;border:1.5px solid #fbbf24;border-radius:8px;font-size:12px;font-weight:600;color:#92400e;cursor:pointer;font-family:inherit;transition:all 0.15s" onmouseover="this.style.background='#fffbeb'" onmouseout="this.style.background='white'">💌 ${currentLang === 'fi' ? 'Kutsu kaveri' : 'Invite friend'}</button>
     </div>
@@ -3519,7 +3556,7 @@ function renderIdeaDetail(idea) {
     </div>` : ''}
     ${addThoughtHtml}
     ${(idea.appUrl || deployBaseUrl) ? `<div style="margin:12px 0 4px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center">
-      <a href="${idea.appUrl ? esc(idea.appUrl) : `${deployBaseUrl}/${idea.gitDir || defaultGitDir(idea.ideaId)}/`}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#ecfdf5;border:1.5px solid #86efac;border-radius:10px;font-size:14px;color:#166534;text-decoration:none;font-weight:600;transition:all 0.15s" onmouseover="this.style.background='#dcfce7';this.style.borderColor='#22c55e'" onmouseout="this.style.background='#ecfdf5';this.style.borderColor='#86efac'">${t('appLink')}</a>
+      <a href="${idea.appUrl ? esc(idea.appUrl) : buildDeployUrl(idea)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#ecfdf5;border:1.5px solid #86efac;border-radius:10px;font-size:14px;color:#166534;text-decoration:none;font-weight:600;transition:all 0.15s" onmouseover="this.style.background='#dcfce7';this.style.borderColor='#22c55e'" onmouseout="this.style.background='#ecfdf5';this.style.borderColor='#86efac'">${t('appLink')}</a>
     </div>` : ''}
   </div>`;
 }
