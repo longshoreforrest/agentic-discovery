@@ -58,6 +58,9 @@ salasanalla.
 | Siili-Site-Tour-2026 | Siili Site Tour 2026 | 2026-04-29 | ei | Siili Site Tour 2026 -tapahtuman ideat |
 | Ilmatieteen_Laitos_20260504 | Ilmatieteen laitos — 4.5.2026 | 2026-05-01 | ei | Ilmatieteen laitoksen idea-/sovellussessio 4.5.2026 |
 | SOK-Markkinointi | SOK Markkinointi | 2026-05-07 | kyllä | SOK Markkinoinnin idea- ja sovellussessio |
+| Elisa-AI-Office | Elisa AI Office | 2026-05-07 | kyllä | Elisa AI Office -sessio |
+| Pihlajalinna | Pihlajalinna | 2026-05-28 | kyllä | Pihlajalinnan idea- ja sovellussessio |
+| Finnair | Finnair | 2026-05-28 | kyllä | Finnairin idea- ja sovellussessio |
 
 ---
 

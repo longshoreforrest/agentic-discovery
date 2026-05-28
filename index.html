@@ -1532,15 +1532,15 @@ const CATEGORY_VALID = CATEGORY !== 'CATEGORY-MISSING';
 let deployBaseUrl = '';
 let gitDirPrefix = '';
 let categoryEncrypted = false;
-const ORCHESTRATORS = ['Tapio Pitkäranta', 'Tommi Pajala'];
-const ADMIN_USER = 'Tapio Pitkäranta';
+const ORCHESTRATORS = ['Tapio Pitkäranta', 'Tommi Pajala', 'Samuel Rautiainen'];
+const ADMIN_USERS = ['Tapio Pitkäranta', 'Samuel Rautiainen'];
 
 function isOrchestrator(name) {
   return ORCHESTRATORS.includes(name);
 }
 
 function isAdmin(name) {
-  return name === ADMIN_USER;
+  return ADMIN_USERS.includes(name);
 }
 
 firebase.initializeApp(firebaseConfig);
